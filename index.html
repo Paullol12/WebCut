@@ -4,49 +4,232 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KepCut - Work in Progress</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0f0f0f;
-            color: #00ff9d;
+            font-family: 'Outfit', sans-serif;
+            background: #09090b;
+            color: #f8fafc;
             text-align: center;
-            padding: 50px;
             margin: 0;
             height: 100vh;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
+            overflow: hidden;
+            position: relative;
         }
+
+        /* Animated Aurora Background */
+        .aurora-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: #09090b;
+            overflow: hidden;
+        }
+
+        .aurora-blob {
+            position: absolute;
+            filter: blur(80px);
+            opacity: 0.45;
+            animation: auroraMove 12s infinite alternate ease-in-out;
+        }
+
+        .blob-1 {
+            width: 450px;
+            height: 450px;
+            background: #00ff9d;
+            top: -10%;
+            left: -10%;
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+        }
+
+        .blob-2 {
+            width: 500px;
+            height: 500px;
+            background: #00b8ff;
+            bottom: -15%;
+            right: -10%;
+            animation-delay: -4s;
+            border-radius: 60% 40% 30% 70% / 50% 40% 60% 50%;
+        }
+
+        .blob-3 {
+            width: 400px;
+            height: 400px;
+            background: #7928ca;
+            top: 40%;
+            left: 30%;
+            animation-delay: -8s;
+            border-radius: 50% 50% 40% 60% / 60% 30% 70% 40%;
+        }
+
+        @keyframes auroraMove {
+            0% {
+                transform: translate(0px, 0px) scale(1);
+            }
+            50% {
+                transform: translate(50px, -40px) scale(1.1);
+            }
+            100% {
+                transform: translate(-30px, 50px) scale(0.95);
+            }
+        }
+
+        /* Mouse Spotlight Effect */
+        .spotlight {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            background: radial-gradient(
+                600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+                rgba(0, 255, 157, 0.12),
+                transparent 80%
+            );
+        }
+
+        /* Floating Animation wrapper */
+        .floating-wrapper {
+            animation: floatContainer 6s ease-in-out infinite;
+        }
+
+        @keyframes floatContainer {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-12px);
+            }
+        }
+
+        /* Glassmorphism Card + Smooth Fade-In + 3D Tilt */
+        .card {
+            background: rgba(18, 18, 22, 0.55);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 50px 60px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), 
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            max-width: 650px;
+            width: 90%;
+            
+            /* Smooth Fade-In */
+            opacity: 0;
+            transform: translateY(20px) scale(0.98);
+            animation: fadeIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            
+            /* 3D Tilt perspective */
+            transform-style: preserve-3d;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(0, 255, 157, 0.3);
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6), 
+                        0 0 30px rgba(0, 255, 157, 0.1),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Modern Typography & Springy elements */
         h1 {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px #00ff9d;
+            font-size: 2.75rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin: 0 0 16px 0;
+            background: linear-gradient(135deg, #ffffff 30%, #00ff9d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+
+        h1:hover {
+            transform: scale(1.03);
+        }
+
         p {
-            font-size: 1.5rem;
-            margin: 10px 0;
+            font-size: 1.15rem;
+            font-weight: 300;
+            color: #94a3b8;
+            margin: 12px 0;
+            letter-spacing: 0.01em;
         }
+
+        p strong {
+            color: #f8fafc;
+            font-weight: 600;
+        }
+
+        .time-container {
+            margin-top: 28px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
         .time {
-            font-size: 2rem;
-            font-weight: bold;
+            font-size: 1.35rem;
+            font-weight: 600;
             color: #00ff9d;
-            margin-top: 20px;
-            text-shadow: 0 0 8px #00ff9d;
+            text-shadow: 0 0 20px rgba(0, 255, 157, 0.4);
+            letter-spacing: 0.02em;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .time:hover {
+            transform: scale(1.05);
         }
     </style>
 </head>
 <body>
-    <h1>WORK IN PROGRESS...</h1>
-    <p>Worked on <strong>KepCut</strong> since <strong>22/Jul/26</strong></p>
-    <p class="time" id="elapsed"></p>
+
+    <!-- Animated Aurora Background Elements -->
+    <div class="aurora-bg">
+        <div class="aurora-blob blob-1"></div>
+        <div class="aurora-blob blob-2"></div>
+        <div class="aurora-blob blob-3"></div>
+    </div>
+
+    <!-- Mouse Spotlight Overlay -->
+    <div class="spotlight" id="spotlight"></div>
+
+    <!-- Floating Container Wrapper -->
+    <div class="floating-wrapper">
+        <div class="card" id="tiltCard">
+            <h1>WORK IN PROGRESS</h1>
+            <p>Worked on <strong>KepCut</strong> since <strong>22/Jul/26</strong></p>
+            <div class="time-container">
+                <p class="time" id="elapsed"></p>
+            </div>
+        </div>
+    </div>
 
     <script>
+        // Live Timer Script
         function updateElapsedTime() {
-            const startDate = new Date('2026-07-22T00:00:00'); // July 22, 2026
+            const startDate = new Date('2026-07-22T00:00:00'); 
             const now = new Date();
             
-            let diff = Math.floor((now - startDate) / 1000); // difference in seconds
+            let diff = Math.floor((now - startDate) / 1000); 
 
             const years = Math.floor(diff / (365 * 24 * 60 * 60));
             diff -= years * (365 * 24 * 60 * 60);
@@ -64,12 +247,44 @@
             const seconds = diff % 60;
 
             document.getElementById('elapsed').textContent = 
-                `${years} years, ${months} months, ${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds has passed`;
+                `${years}y, ${months}m, ${days}d, ${hours}h, ${minutes}m, ${seconds}s elapsed`;
         }
 
-        // Update every second
         setInterval(updateElapsedTime, 1000);
-        updateElapsedTime(); // Initial call
+        updateElapsedTime();
+
+        // Mouse Spotlight & 3D Tilt Script
+        const card = document.getElementById('tiltCard');
+        const body = document.body;
+
+        body.addEventListener('mousemove', (e) => {
+            // Update Mouse Spotlight CSS Variables
+            const rect = body.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            body.style.setProperty('--mouse-x', `${x}px`);
+            body.style.setProperty('--mouse-y', `${y}px`);
+
+            // 3D Tilt Effect Calculation
+            const cardRect = card.getBoundingClientRect();
+            const cardCenterX = cardRect.left + cardRect.width / 2;
+            const cardCenterY = cardRect.top + cardRect.height / 2;
+            
+            const mouseXFromCenter = e.clientX - cardCenterX;
+            const mouseYFromCenter = e.clientY - cardCenterY;
+            
+            // Adjust tilt intensity via divisor (higher = subtler tilt)
+            const tiltX = (mouseYFromCenter / (cardRect.height / 2)) * -8;
+            const tiltY = (mouseXFromCenter / (cardRect.width / 2)) * 8;
+
+            card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.02, 1.02, 1.02)`;
+        });
+
+        // Reset Card Transform on Mouse Leave
+        body.addEventListener('mouseleave', () => {
+            card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+        });
     </script>
 </body>
 </html>
