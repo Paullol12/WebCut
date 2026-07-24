@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KepCut - Work in Progress</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f0f0f;
+            color: #00ff9d;
+            text-align: center;
+            padding: 50px;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #00ff9d;
+        }
+        p {
+            font-size: 1.5rem;
+            margin: 10px 0;
+        }
+        .time {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00ff9d;
+            margin-top: 20px;
+            text-shadow: 0 0 8px #00ff9d;
+        }
+    </style>
+</head>
+<body>
+    <h1>WORK IN PROGRESS...</h1>
+    <p>Worked on <strong>KepCut</strong> since <strong>22/Jul/26</strong></p>
+    <p class="time" id="elapsed"></p>
+
+    <script>
+        function updateElapsedTime() {
+            const startDate = new Date('2026-07-22T00:00:00'); // July 22, 2026
+            const now = new Date();
+            
+            let diff = Math.floor((now - startDate) / 1000); // difference in seconds
+
+            const years = Math.floor(diff / (365 * 24 * 60 * 60));
+            diff -= years * (365 * 24 * 60 * 60);
+
+            const months = Math.floor(diff / (30 * 24 * 60 * 60));
+            diff -= months * (30 * 24 * 60 * 60);
+
+            const days = Math.floor(diff / (24 * 60 * 60));
+            diff -= days * (24 * 60 * 60);
+
+            const hours = Math.floor(diff / (60 * 60));
+            diff -= hours * (60 * 60);
+
+            const minutes = Math.floor(diff / 60);
+            const seconds = diff % 60;
+
+            document.getElementById('elapsed').textContent = 
+                `${years} years, ${months} months, ${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds has passed`;
+        }
+
+        // Update every second
+        setInterval(updateElapsedTime, 1000);
+        updateElapsedTime(); // Initial call
+    </script>
+</body>
+</html>
