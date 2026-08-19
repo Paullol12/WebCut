@@ -1,0 +1,3441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebCut Studio - Professional In-Browser Video Editor with Folder Import & Asset Bundling</title>
+    <style>
+        :root {
+            --bg-base: #0f0f11;
+            --bg-panel: #161619;
+            --bg-surface: #202025;
+            --bg-hover: #2b2b31;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border: #2a2a32;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            height: 52px;
+            background-color: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            flex-shrink: 0;
+            z-index: 50;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent), #ec4899);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 15px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .logo-title {
+            font-weight: 600;
+            font-size: 16px;
+            letter-spacing: -0.3px;
+        }
+
+        .nav-tools {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        button {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 7px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+        }
+
+        button:hover {
+            background: var(--bg-hover);
+            border-color: var(--text-muted);
+        }
+
+        button.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+        }
+
+        button.primary:hover {
+            background: var(--accent-hover);
+        }
+
+        button.keyframe-btn {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: var(--accent);
+            color: var(--accent);
+            width: 100%;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        button.keyframe-btn:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        /* Custom Toast Notification Container (Bottom Right) */
+        #toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 5000;
+            pointer-events: none;
+        }
+
+        .toast-notification {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+            border-radius: 10px;
+            padding: 14px 18px;
+            width: 320px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: auto;
+            position: relative;
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+        }
+
+        .toast-notification.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .toast-notification.hide {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+
+        .toast-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .toast-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .toast-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .toast-close:hover {
+            background: var(--bg-hover);
+            color: #fff;
+        }
+
+        .toast-body {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .toast-footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 4px;
+        }
+
+        .toast-dismiss-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .toast-dismiss-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--text-muted);
+        }
+
+        /* Homepage View */
+        #homepage-view {
+            position: absolute;
+            top: 52px; left: 0; right: 0; bottom: 0;
+            background: var(--bg-base);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 40px;
+        }
+
+        .homepage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+        }
+
+        .homepage-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .homepage-grid-container {
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+            margin-top: 16px;
+        }
+
+        .project-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+        }
+
+        .project-card-thumb {
+            height: 140px;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 12px;
+            position: relative;
+        }
+
+        .project-card-info {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .project-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .project-card-date {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .settings-section {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Editor Workspace Layout */
+        .workspace {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            grid-template-rows: 1fr 280px;
+            width: 100vw;
+            height: calc(100vh - 52px);
+            overflow: hidden;
+        }
+
+        .sidebar {
+            background-color: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            grid-column: 1 / 2;
+            grid-row: 1 / 2;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            background: var(--bg-base);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            height: 42px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0 4px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-muted);
+            font-size: 9.5px;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            color: var(--text-main);
+            border-bottom-color: var(--accent);
+            background: var(--bg-panel);
+        }
+
+        .tab-content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        .upload-dropzone {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            background: var(--bg-surface);
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .upload-dropzone.dragover {
+            border-color: var(--accent);
+            background: var(--bg-hover);
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            overflow-y: auto;
+            align-content: start;
+            padding-bottom: 10px;
+        }
+
+        .media-item {
+            background: var(--bg-surface);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            cursor: grab;
+            transition: transform 0.1s, border-color 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .media-item:active {
+            cursor: grabbing;
+        }
+
+        .media-item:hover {
+            border-color: var(--text-muted);
+            transform: translateY(-2px);
+        }
+
+        .media-thumb {
+            height: 75px;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .media-thumb video, .media-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .media-title {
+            font-size: 11px;
+            padding: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-main);
+        }
+
+        .preview-area {
+            background-color: var(--bg-base);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            grid-column: 2 / 3;
+            grid-row: 1 / 2;
+            overflow: hidden;
+            padding: 20px;
+            height: 100%;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        #preview-canvas {
+            background: #000;
+            border-radius: 8px;
+            box-shadow: 0 16px 32px rgba(0,0,0,0.6);
+            border: 1px solid var(--border);
+            object-fit: contain;
+            cursor: default;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .preview-controls {
+            position: absolute;
+            bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(22, 22, 25, 0.9);
+            backdrop-filter: blur(12px);
+            padding: 6px 14px;
+            border-radius: 36px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            z-index: 10;
+        }
+
+        .preview-controls button {
+            background: transparent;
+            border: none;
+            padding: 6px;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-controls button:hover {
+            background: var(--bg-surface);
+        }
+
+        .preview-controls button.primary {
+            background: var(--accent);
+            border-radius: 50%;
+        }
+
+        .preview-controls button.primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .timecode {
+            font-family: monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            min-width: 90px;
+            text-align: center;
+        }
+
+        .inspector {
+            background-color: var(--bg-panel);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            grid-column: 3 / 4;
+            grid-row: 1 / 2;
+            padding: 16px;
+            overflow-y: auto;
+            height: 100%;
+        }
+
+        .inspector h3 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+        }
+
+        .prop-group {
+            margin-bottom: 12px;
+        }
+
+        .prop-group label {
+            display: block;
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .prop-group input, .prop-group select, .prop-group textarea {
+            width: 100%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 7px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .prop-group textarea {
+            resize: vertical;
+            min-height: 70px;
+            font-family: inherit;
+        }
+
+        .prop-group input:focus, .prop-group select:focus, .prop-group textarea:focus {
+            border-color: var(--accent);
+        }
+
+        .prop-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .ai-tool-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ai-tool-card h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .timeline-container {
+            grid-column: 1 / 4;
+            grid-row: 2 / 3;
+            background-color: var(--bg-panel);
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .timeline-toolbar {
+            height: 38px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            flex-shrink: 0;
+        }
+
+        .timeline-tools-left, .timeline-tools-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .timeline-body {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .timeline-tracks-header {
+            width: 180px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 3;
+            flex-shrink: 0;
+        }
+
+        .track-header-item {
+            height: 60px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            background: var(--bg-surface);
+            gap: 4px;
+        }
+
+        .track-header-name {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-main);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            flex: 1;
+            outline: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .track-header-name:focus, .track-header-name:hover {
+            background: var(--bg-hover);
+            border-color: var(--border);
+        }
+
+        .track-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .track-header-item button {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 4px;
+            font-size: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .track-header-item button:hover {
+            background: var(--bg-hover);
+            color: #fff;
+        }
+
+        .timeline-scroll-area {
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: auto;
+            position: relative;
+            background: var(--bg-base);
+        }
+
+        .timeline-ruler {
+            height: 22px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 4;
+            min-width: 4000px;
+            cursor: pointer;
+        }
+
+        .timeline-tracks-content {
+            position: relative;
+            min-width: 4000px;
+        }
+
+        .track-lane {
+            height: 60px;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            background-image: linear-gradient(to right, var(--border) 1px, transparent 1px);
+            background-size: 100px 100%;
+        }
+
+        .clip {
+            position: absolute;
+            height: 48px;
+            top: 6px;
+            background: var(--accent);
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 4px 8px;
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: border-color 0.1s, box-shadow 0.1s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .clip.selected {
+            border-color: #fff;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+        }
+
+        .clip-title {
+            font-size: 10px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #ffffff;
+            pointer-events: none;
+        }
+
+        .clip-resize-handle {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 8px;
+            cursor: ew-resize;
+            background: rgba(255, 255, 255, 0.15);
+            border-top-right-radius: 6px;
+            border-bottom-right-radius: 6px;
+            transition: background 0.15s;
+        }
+
+        .clip-resize-handle:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .keyframe-marker {
+            position: absolute;
+            top: 2px;
+            width: 6px;
+            height: 10px;
+            background: #fbbf24;
+            border-radius: 2px;
+            transform: translateX(-50%);
+            z-index: 5;
+            cursor: pointer;
+            box-shadow: 0 0 4px rgba(251, 191, 36, 0.8);
+        }
+        .keyframe-marker:hover {
+            transform: translateX(-50%) scale(1.3);
+        }
+
+        .playhead {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 14px;
+            z-index: 20;
+            cursor: ew-resize;
+            transform: translateX(-50%);
+            pointer-events: auto;
+        }
+
+        .playhead-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 6px;
+            width: 2px;
+            background: #ef4444;
+            pointer-events: none;
+        }
+
+        .playhead::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 1px;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid #ef4444;
+            pointer-events: none;
+        }
+
+        #selection-box {
+            position: absolute;
+            border: 1px dashed var(--accent);
+            background: rgba(99, 102, 241, 0.15);
+            pointer-events: none;
+            z-index: 100;
+            display: none;
+        }
+
+        .context-menu {
+            position: fixed;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 0;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            z-index: 2000;
+            display: none;
+            min-width: 150px;
+        }
+
+        .context-menu-item {
+            padding: 8px 16px;
+            font-size: 12px;
+            color: var(--text-main);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .context-menu-item:hover {
+            background: var(--bg-hover);
+            color: #fff;
+        }
+
+        .context-menu-item.danger {
+            color: var(--danger);
+        }
+        .context-menu-item.danger:hover {
+            background: rgba(239, 68, 68, 0.15);
+        }
+
+        .effect-card, .audio-card, .text-template {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .effect-card:hover, .audio-card:hover, .text-template:hover {
+            border-color: var(--accent);
+            background: var(--bg-hover);
+            transform: translateY(-1px);
+        }
+
+        .effect-card strong, .audio-card strong, .text-template strong {
+            display: block;
+            margin-bottom: 2px;
+            color: var(--text-main);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+
+        .modal {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            width: 420px;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 24px 48px rgba(0,0,0,0.6);
+        }
+
+        .modal h2 {
+            font-size: 16px;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-base);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Toast Notification Container (Bottom Right) -->
+    <div id="toast-container"></div>
+
+    <!-- HOMEPAGE & PROJECT DASHBOARD VIEW -->
+    <div id="homepage-view">
+        <div class="homepage-header">
+            <div>
+                <h1>WebCut Studio Projects</h1>
+                <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Pick up where you left off, import project folders, or start a fresh editing session.</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <!-- Updated input to accept folders OR individual .webcut/.json files -->
+                <input type="file" id="folder-import-input" webkitdirectory directory multiple accept=".webcut,.json" style="display: none;" onchange="app.handleFolderOrFileImport(event)">
+                <button onclick="document.getElementById('folder-import-input').click()">📁 Import Folder or .webcut</button>
+                <button class="primary" onclick="app.createNewProjectFromHome()">✨ Create New Project</button>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <div>
+                <strong style="font-size: 13px; display: block; margin-bottom: 2px;">Local File System Export Settings</strong>
+                <span style="font-size: 11px; color: var(--text-muted);">Save project bundles directly to your machine as complete folders containing assets and project data.</span>
+            </div>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
+                <input type="checkbox" id="setting-file-system" onchange="app.toggleFileSystemSetting(this.checked)" style="width: 16px; height: 16px; accent-color: var(--accent);">
+                Enable Local File Saves
+            </label>
+        </div>
+
+        <div class="homepage-grid-container" style="margin-top: 30px;">
+            <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); border-bottom: 1px solid var(--border); padding-bottom: 6px;">Your Saved Projects</h3>
+            <div class="projects-grid" id="projects-grid-container">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <div class="context-menu" id="context-menu">
+        <div class="context-menu-item" onclick="app.ctxSplit()">Split at Playhead</div>
+        <div class="context-menu-item" onclick="app.ctxDuplicate()">Duplicate Clip</div>
+        <div class="context-menu-item danger" onclick="app.ctxDelete()">Delete Clip(s)</div>
+    </div>
+
+    <header>
+        <div class="logo-area" onclick="app.goHome()">
+            <div class="logo-icon">W</div>
+            <span class="logo-title" id="project-title-display">WebCut Studio (Untitled Project)</span>
+        </div>
+        <div class="nav-tools">
+            <button onclick="app.saveCurrentProjectManual()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Save Project Bundle</button>
+            <button onclick="app.newProject()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New Project</button>
+            <button onclick="app.openExportModal()" class="primary"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>Export Video</button>
+        </div>
+    </header>
+
+    <div class="workspace" id="editor-workspace" style="display: none;">
+        
+        <div class="sidebar">
+            <div class="sidebar-tabs">
+                <button class="tab-btn active" onclick="app.switchTab('media', event)">Media</button>
+                <button class="tab-btn" onclick="app.switchTab('text', event)">Text</button>
+                <button class="tab-btn" onclick="app.switchTab('audio', event)">Audio</button>
+                <button class="tab-btn" onclick="app.switchTab('effects', event)">Effects</button>
+                <button class="tab-btn" onclick="app.switchTab('animations', event)">Anims</button>
+                <button class="tab-btn" onclick="app.switchTab('ai', event)" style="color:var(--accent); font-weight:600;">✨ AI Tools</button>
+            </div>
+            
+            <div id="tab-media" class="tab-content">
+                <div class="upload-dropzone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin: 0 auto 6px auto; display:block; color:var(--text-muted);"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span style="font-size: 12px; font-weight: 500;">Import Files, Folders or Drop Here</span>
+                    <span style="font-size: 10px; color: var(--text-muted); display:block; margin-top:2px;">Video, Image, Audio, Folders</span>
+                </div>
+                <input type="file" id="file-input" style="display: none;" multiple accept="video/*,image/*,audio/*,.mp3,.wav,.webcut,.json">
+                
+                <button class="primary" style="width: 100%; justify-content: center; margin-top: 4px;" onclick="app.openScreenRecorderModal()">🔴 Record Screen / Tab</button>
+
+                <div class="media-grid" id="media-library-grid" style="margin-top: 10px;"></div>
+            </div>
+
+            <div id="tab-text" class="tab-content">
+                <div class="text-template" draggable="true" ondragstart="app.handleTemplateDragStart(event, 'text', 'Standard Title', 5)" onclick="app.addTextClip('Standard Title', 5)">
+                    <strong>Default Title</strong>
+                    <span style="font-size: 10px; color: var(--text-muted);">Clean modern sans-serif</span>
+                </div>
+                <div class="text-template" draggable="true" ondragstart="app.handleTemplateDragStart(event, 'text', 'Neon Subtitle', 5)" onclick="app.addTextClip('Neon Subtitle', 5)">
+                    <strong>Neon Glow Caption</strong>
+                    <span style="font-size: 10px; color: var(--text-muted);">Stylized header overlay</span>
+                </div>
+                <div class="text-template" draggable="true" ondragstart="app.handleTemplateDragStart(event, 'text', 'Lower Thirds', 5)" onclick="app.addTextClip('Lower Thirds', 5)">
+                    <strong>Lower Third</strong>
+                    <span style="font-size: 10px; color: var(--text-muted);">Broadcast presentation</span>
+                </div>
+            </div>
+
+            <div id="tab-audio" class="tab-content">
+                <div class="audio-card" draggable="true" ondragstart="app.handleTemplateDragStart(event, 'audio', 'Cyberpunk Beats', 12)" onclick="app.addAudioClip('Cyberpunk Beats', 12)">
+                    <strong>Cyberpunk Beats</strong>
+                    <span style="font-size: 10px; color: var(--text-muted);">120 BPM • Electronic</span>
+                </div>
+                <div class="audio-card" draggable="true" ondragstart="app.handleTemplateDragStart(event, 'audio', 'Mellow Study Lofi', 12)" onclick="app.addAudioClip('Mellow Study Lofi', 12)">
+                    <strong>Mellow Study Lofi</strong>
+                    <span style="font-size: 10px; color: var(--text-muted);">85 BPM • Ambient</span>
+                </div>
+            </div>
+
+            <div id="tab-effects" class="tab-content">
+                <div class="effect-card" onclick="app.applyEffect('glitch')">
+                    <strong>Digital Glitch</strong>
+                    <span style="font-size: 10px; color: var(--text-muted);">RGB shift & scanline artifact</span>
+                </div>
+                <div class="effect-card" onclick="app.applyEffect('blur')">
+                    <strong>Gaussian Blur</strong>
+                    <span style="font-size: 10px; color: var(--text-muted);">Cinematic background defocus</span>
+                </div>
+                <div class="effect-card" onclick="app.applyEffect('grayscale')">
+                    <strong>Noir Monochrome</strong>
+                    <span style="font-size: 10px; color: var(--text-muted);">Classic contrast black & white</span>
+                </div>
+            </div>
+
+            <div id="tab-animations" class="tab-content">
+                <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px;">Click an animation to apply to selected clip:</div>
+                <div id="animations-grid" style="display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: 420px; padding-right: 4px;"></div>
+            </div>
+
+            <div id="tab-ai" class="tab-content">
+                <div class="ai-tool-card">
+                    <h4>🎙️ AI Voiceover (TTS)</h4>
+                    <div class="prop-group" style="margin-bottom:0;">
+                        <label>Script / Speech Text</label>
+                        <textarea id="ai-tts-text" placeholder="Type what you want the AI voice to say...">Welcome back to another video! Don't forget to like and subscribe for more amazing content.</textarea>
+                    </div>
+                    <div class="prop-row" style="margin-top:6px;">
+                        <div class="prop-group" style="margin-bottom:0;">
+                            <label>Voice Persona</label>
+                            <select id="ai-tts-voice"></select>
+                        </div>
+                        <div class="prop-group" style="margin-bottom:0;">
+                            <label>Speed</label>
+                            <select id="ai-tts-speed">
+                                <option value="0.8">0.8x (Slow)</option>
+                                <option value="1.0" selected>1.0x (Normal)</option>
+                                <option value="1.2">1.2x (Fast)</option>
+                                <option value="1.5">1.5x (Quick)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="primary" style="width:100%; justify-content:center; margin-top:4px;" onclick="app.generateAIVoiceover()">Generate & Add Voiceover</button>
+                </div>
+
+                <div class="ai-tool-card" style="margin-top:4px;">
+                    <h4>💬 AI Auto Captions</h4>
+                    <span style="font-size: 11px; color: var(--text-muted); line-height: 1.3;">Automatically parse audio tracks or active clips to generate styled subtitle overlays on your timeline.</span>
+                    <div class="prop-group" style="margin-top:4px; margin-bottom:0;">
+                        <label>Subtitle Style</label>
+                        <select id="ai-caption-style">
+                            <option value="neon">Neon Glow Highlight</option>
+                            <option value="standard">Classic Bold Stroke</option>
+                            <option value="minimal">Minimal Clean White</option>
+                        </select>
+                    </div>
+                    <button class="primary" style="width:100%; justify-content:center; margin-top:4px;" onclick="app.generateAICaptions()">✨ Auto-Generate Captions</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="preview-area">
+            <div style="position: absolute; top: 16px; left: 20px; z-index: 10; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Aspect Ratio:</span>
+                <select id="aspect-ratio-select" onchange="app.changeAspectRatio(this.value)" style="background: var(--bg-surface); border: 1px solid var(--border); color: var(--text-main); padding: 4px 8px; border-radius: 6px; font-size: 11px; outline: none;">
+                    <option value="16:9">16:9 Widescreen (YouTube)</option>
+                    <option value="9:16">9:16 Vertical (Shorts/TikTok)</option>
+                    <option value="1:1">1:1 Square (Instagram)</option>
+                    <option value="4:3">4:3 Classic TV</option>
+                    <option value="21:9">21:9 Cinematic</option>
+                </select>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="preview-canvas" width="1280" height="720"></canvas>
+            </div>
+            <div class="preview-controls">
+                <button onclick="app.skipBackward()" title="Rewind 1s"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 20L9 12l10-8v16zM5 19V5"/></svg></button>
+                <button id="play-pause-btn" class="primary" onclick="app.togglePlay()" title="Play / Pause"><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" id="play-icon"><path d="M8 5v14l11-7z"/></svg></button>
+                <button onclick="app.skipForward()" title="Forward 1s"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 4l10 8-10 8V4zM19 5v14"/></svg></button>
+                <span class="timecode" id="current-timecode">00:00:00 / 00:00:00</span>
+                <button onclick="app.splitClipAtPlayhead()" title="Split Active Clip"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4v2h16V7h-3l-2.5-3zM4 15h16v2H4z"/></svg></button>
+            </div>
+        </div>
+
+        <div class="inspector" id="inspector-panel">
+            <h3>Clip Properties</h3>
+            <div id="inspector-content">
+                <p style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">Select a clip on the timeline to edit properties, volume, position, or add keyframes.</p>
+            </div>
+        </div>
+
+        <div class="timeline-container">
+            <div class="timeline-toolbar">
+                <div class="timeline-tools-left">
+                    <button onclick="app.zoomTimeline(0.1)" title="Zoom In"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"/></svg></button>
+                    <button onclick="app.zoomTimeline(-0.1)" title="Zoom Out"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg></button>
+                    <span style="font-size: 11px; color: var(--text-muted);" id="zoom-level-label">Zoom: 100%</span>
+                </div>
+                <div class="timeline-tools-right">
+                    <button onclick="app.addTrack()" title="Add New Layer"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add Layer</button>
+                    <button onclick="app.addKeyframeAtCurrentTime()" title="Add Keyframe at Playhead"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20"/></svg>Add Keyframe</button>
+                    <button onclick="app.deleteSelectedClips()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>Delete Selected</button>
+                </div>
+            </div>
+            <div class="timeline-body" id="timeline-body-area">
+                <div id="selection-box"></div>
+                <div class="timeline-tracks-header" id="tracks-header-container"></div>
+                <div class="timeline-scroll-area" id="timeline-scroll">
+                    <div class="timeline-ruler" id="timeline-ruler"></div>
+                    <div class="timeline-tracks-content" id="tracks-content" style="width: 4000px;">
+                        <div class="playhead" id="timeline-playhead" style="left: 0px;">
+                            <div class="playhead-line"></div>
+                        </div>
+                        <div id="track-lanes-wrapper"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Screen Recording Modal -->
+    <div class="modal-overlay" id="screen-recorder-modal">
+        <div class="modal">
+            <h2>Record Screen, Window or Tab</h2>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4;">Click below to launch your browser's screen share prompt. Once you stop recording, the video file will be automatically imported into your project media library.</p>
+            <div id="screen-rec-status" style="font-size: 13px; font-weight: 600; color: var(--success); margin-bottom: 14px; display: none;">🔴 Recording in progress... (<span id="screen-rec-timer">00:00</span>)</div>
+            <div class="modal-actions">
+                <button onclick="app.closeScreenRecorderModal()">Close</button>
+                <button class="primary" id="start-screen-rec-btn" onclick="app.startScreenRecording()">Start Screen Recording</button>
+                <button class="danger" id="stop-screen-rec-btn" onclick="app.stopScreenRecording()" style="display:none; background:rgba(239, 68, 68, 0.2); border-color:var(--danger); color:var(--danger);">Stop & Import Recording</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal with Cancel Option -->
+    <div class="modal-overlay" id="export-modal">
+        <div class="modal">
+            <h2>Export Project Settings</h2>
+            <div class="prop-group">
+                <label>Resolution Profile</label>
+                <select id="export-res">
+                    <option value="640x360">SD (640 x 360)</option>
+                    <option value="1280x720" selected>HD (1280 x 720)</option>
+                    <option value="1920x1080">Full HD (1920 x 1080)</option>
+                </select>
+            </div>
+            <div class="prop-row">
+                <div class="prop-group">
+                    <label>Frame Rate (FPS)</label>
+                    <select id="export-fps">
+                        <option value="24">24 fps (Cinematic)</option>
+                        <option value="30" selected>30 fps (Standard)</option>
+                        <option value="60">60 fps (High Smoothness)</option>
+                    </select>
+                </div>
+                <div class="prop-group">
+                    <label>Container Format</label>
+                    <select id="export-format">
+                        <option value="video/webm;codecs=vp9" selected>WebM (VP9)</option>
+                        <option value="video/webm;codecs=vp8">WebM (VP8)</option>
+                        <option value="video/mp4">MP4 (Browser Native)</option>
+                    </select>
+                </div>
+            </div>
+            <div id="export-progress-container" style="display:none; margin-top:14px;">
+                <div style="font-size: 11px; color: var(--text-muted); margin-bottom:6px; display:flex; justify-content:space-between;">
+                    <span id="export-status-text">Encoding sequence...</span>
+                    <span id="export-percentage">0%</span>
+                </div>
+                <div style="width:100%; height:6px; background:var(--bg-surface); border-radius:3px; overflow:hidden; margin-bottom: 12px;">
+                    <div id="export-progress-bar" style="width:0%; height:100%; background:var(--accent); transition: width 0.05s linear;"></div>
+                </div>
+                <button class="danger" style="width:100%; justify-content:center; background: rgba(239, 68, 68, 0.2); border-color: var(--danger); color: var(--danger);" onclick="app.cancelExport()">Cancel Export Process</button>
+            </div>
+            <div class="modal-actions" id="export-modal-buttons">
+                <button onclick="app.closeExportModal()">Cancel</button>
+                <button class="primary" id="start-export-btn" onclick="app.startExport()">Start Render & Export</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class WebCutEngine {
+            constructor() {
+                this.projectId = 'proj_' + Math.random().toString(36).substr(2, 9);
+                this.projectName = 'Untitled Project';
+                this.fps = 30;
+                this.duration = 40; 
+                this.currentTime = 0; 
+                this.isPlaying = false;
+                this.pixelsPerSecond = 50;
+                this.aspectRatio = '16:9';
+                
+                this.assets = [];
+                this.clips = [];
+                this.selectedClipIds = new Set();
+                
+                this.tracks = [
+                    { id: 0, name: 'Video Track 2', type: 'video' },
+                    { id: 1, name: 'Video Track 1', type: 'video' },
+                    { id: 2, name: 'Audio & Voice Track', type: 'audio' }
+                ];
+                
+                this.canvas = document.getElementById('preview-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.mediaElementsRegistry = {};
+
+                this.activeHandle = null; 
+                this.canvasDragStart = { x: 0, y: 0 };
+                this.initialClipRect = { x: 0, y: 0, w: 0, h: 0 };
+                this.isExporting = false;
+                this.useFileSystem = localStorage.getItem('webcut_use_filesystem') === 'true';
+
+                this.mediaRecorderStream = null;
+                this.screenMediaRecorder = null;
+                this.recordedChunks = [];
+                this.recTimerInterval = null;
+                this.recSecondsElapsed = 0;
+
+                document.getElementById('setting-file-system').checked = this.useFileSystem;
+
+                this.initAnimationsList();
+                this.initTTSVoices();
+                this.initDOMBindings();
+                this.initTimelineInteraction();
+                this.initCanvasInteraction();
+                this.changeAspectRatio('16:9');
+                this.renderHomepageProjects();
+            }
+
+            // Custom Bottom-Right Popup Toast System
+            showToast(title, message, duration = 4000) {
+                const container = document.getElementById('toast-container');
+                if (!container) return;
+
+                const toast = document.createElement('div');
+                toast.className = 'toast-notification';
+                toast.innerHTML = `
+                    <div class="toast-header">
+                        <span class="toast-title">${title}</span>
+                        <button class="toast-close" title="Dismiss">✕</button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                    <div class="toast-footer">
+                        <button class="toast-dismiss-btn">Dismiss</button>
+                    </div>
+                `;
+
+                const removeToast = () => {
+                    toast.classList.add('hide');
+                    setTimeout(() => {
+                        if (toast.parentElement) toast.parentElement.removeChild(toast);
+                    }, 350);
+                };
+
+                toast.querySelector('.toast-close').onclick = removeToast;
+                toast.querySelector('.toast-dismiss-btn').onclick = removeToast;
+
+                container.appendChild(toast);
+
+                // Trigger slide-in entry animation
+                requestAnimationFrame(() => {
+                    toast.classList.add('show');
+                });
+
+                if (duration > 0) {
+                    setTimeout(removeToast, duration);
+                }
+            }
+
+            changeAspectRatio(ratio) {
+                this.aspectRatio = ratio;
+                let w = 1280, h = 720;
+                if (ratio === '16:9') { w = 1280; h = 720; }
+                else if (ratio === '9:16') { w = 720; h = 1280; }
+                else if (ratio === '1:1') { w = 1080; h = 1080; }
+                else if (ratio === '4:3') { w = 960; h = 720; }
+                else if (ratio === '21:9') { w = 1680; h = 720; }
+
+                this.canvas.width = w;
+                this.canvas.height = h;
+                this.renderCanvas();
+            }
+
+            openScreenRecorderModal() {
+                document.getElementById('screen-recorder-modal').style.display = 'flex';
+                document.getElementById('screen-rec-status').style.display = 'none';
+                document.getElementById('start-screen-rec-btn').style.display = 'inline-flex';
+                document.getElementById('stop-screen-rec-btn').style.display = 'none';
+            }
+
+            closeScreenRecorderModal() {
+                if (this.screenMediaRecorder && this.screenMediaRecorder.state === 'recording') {
+                    this.stopScreenRecording();
+                }
+                document.getElementById('screen-recorder-modal').style.display = 'none';
+            }
+
+            async startScreenRecording() {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                    this.showToast('Error', 'Screen recording is not supported in your browser environment.');
+                    return;
+                }
+
+                try {
+                    this.mediaRecorderStream = await navigator.mediaDevices.getDisplayMedia({
+                        video: { mediaSource: 'screen', frameRate: 30 },
+                        audio: true
+                    });
+
+                    this.recordedChunks = [];
+                    let options = { mimeType: 'video/webm;codecs=vp9' };
+                    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                        options = { mimeType: 'video/webm' };
+                    }
+
+                    this.screenMediaRecorder = new MediaRecorder(this.mediaRecorderStream, options);
+
+                    this.screenMediaRecorder.ondataavailable = (e) => {
+                        if (e.data && e.data.size > 0) this.recordedChunks.push(e.data);
+                    };
+
+                    this.screenMediaRecorder.onstop = () => {
+                        const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
+                        const url = URL.createObjectURL(blob);
+                        const assetId = 'screen_' + Math.random().toString(36).substr(2, 9);
+                        const assetName = `Screen Recording ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.webm`;
+
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            const asset = {
+                                id: assetId,
+                                name: assetName,
+                                type: 'video',
+                                dataUrl: reader.result,
+                                url: url
+                            };
+                            this.assets.push(asset);
+
+                            const vid = document.createElement('video');
+                            vid.src = url;
+                            vid.muted = true;
+                            vid.load();
+                            this.mediaElementsRegistry[assetId] = vid;
+
+                            this.renderMediaLibrary();
+                            this.closeScreenRecorderModal();
+                            this.showToast('Import Success', 'Screen recording successfully imported into your Media Library!');
+                        };
+                        reader.readAsDataURL(blob);
+                    };
+
+                    this.mediaRecorderStream.getVideoTracks()[0].onended = () => {
+                        if (this.screenMediaRecorder && this.screenMediaRecorder.state === 'recording') {
+                            this.stopScreenRecording();
+                        }
+                    };
+
+                    this.screenMediaRecorder.start(250);
+                    this.recSecondsElapsed = 0;
+                    document.getElementById('screen-rec-status').style.display = 'block';
+                    document.getElementById('start-screen-rec-btn').style.display = 'none';
+                    document.getElementById('stop-screen-rec-btn').style.display = 'inline-flex';
+
+                    this.recTimerInterval = setInterval(() => {
+                        this.recSecondsElapsed++;
+                        const m = Math.floor(this.recSecondsElapsed / 60).toString().padStart(2, '0');
+                        const s = (this.recSecondsElapsed % 60).toString().padStart(2, '0');
+                        document.getElementById('screen-rec-timer').innerText = `${m}:${s}`;
+                    }, 1000);
+
+                } catch (err) {
+                    console.warn('Screen recording permission denied or cancelled', err);
+                }
+            }
+
+            stopScreenRecording() {
+                if (this.recTimerInterval) clearInterval(this.recTimerInterval);
+                if (this.screenMediaRecorder && this.screenMediaRecorder.state === 'recording') {
+                    this.screenMediaRecorder.stop();
+                }
+                if (this.mediaRecorderStream) {
+                    this.mediaRecorderStream.getTracks().forEach(track => track.stop());
+                }
+            }
+
+            toggleFileSystemSetting(val) {
+                this.useFileSystem = val;
+                localStorage.setItem('webcut_use_filesystem', val ? 'true' : 'false');
+            }
+
+            goHome() {
+                this.pauseAllAudio();
+                this.saveCurrentProjectState();
+                document.getElementById('editor-workspace').style.display = 'none';
+                document.getElementById('homepage-view').style.display = 'flex';
+                this.renderHomepageProjects();
+            }
+
+            createNewProjectFromHome() {
+                this.projectId = 'proj_' + Math.random().toString(36).substr(2, 9);
+                this.projectName = 'Project ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                this.clips = [];
+                this.assets = [];
+                this.selectedClipIds.clear();
+                this.currentTime = 0;
+                this.tracks = [
+                    { id: 0, name: 'Video Track 2', type: 'video' },
+                    { id: 1, name: 'Video Track 1', type: 'video' },
+                    { id: 2, name: 'Audio & Voice Track', type: 'audio' }
+                ];
+                document.getElementById('project-title-display').innerText = `WebCut Studio (${this.projectName})`;
+                document.getElementById('homepage-view').style.display = 'none';
+                document.getElementById('editor-workspace').style.display = 'grid';
+
+                this.renderTracksDOM();
+                this.renderMediaLibrary();
+                this.renderCanvas();
+                this.updateTimecodeDisplay();
+                this.saveCurrentProjectState();
+            }
+
+            async saveCurrentProjectState() {
+                const projectData = {
+                    projectId: this.projectId,
+                    projectName: this.projectName,
+                    updatedAt: new Date().toISOString(),
+                    clips: this.clips,
+                    tracks: this.tracks,
+                    duration: this.duration,
+                    aspectRatio: this.aspectRatio,
+                    assets: this.assets.map(a => ({
+                        id: a.id,
+                        name: a.name,
+                        type: a.type,
+                        dataUrl: a.dataUrl || ''
+                    }))
+                };
+
+                const jsonStr = JSON.stringify(projectData, null, 2);
+
+                if (this.useFileSystem && window.showSaveFilePicker) {
+                    try {
+                        const handle = await window.showSaveFilePicker({
+                            suggestedName: `${this.projectName.toLowerCase().replace(/\s+/g, '_')}.webcut`,
+                            types: [{ description: 'WebCut Project Bundles', accept: { 'application/json': ['.webcut', '.json'] } }]
+                        });
+                        const writable = await handle.createWritable();
+                        await writable.write(jsonStr);
+                        await writable.close();
+                        return;
+                    } catch (e) {
+                        console.warn('File system picker cancelled or failed, falling back to browser download & storage', e);
+                    }
+                }
+
+                // Fallback: Trigger download of the project bundle containing base64 assets
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${this.projectName.toLowerCase().replace(/\s+/g, '_')}.webcut`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                let allProjects = JSON.parse(localStorage.getItem('webcut_projects') || '{}');
+                allProjects[this.projectId] = projectData;
+                localStorage.setItem('webcut_projects', JSON.stringify(allProjects));
+            }
+
+            saveCurrentProjectManual() {
+                this.saveCurrentProjectState();
+                this.showToast('Project Saved', 'Project bundle saved and downloaded successfully with all assets embedded!');
+            }
+
+            renderHomepageProjects() {
+                const container = document.getElementById('projects-grid-container');
+                container.innerHTML = '';
+
+                let allProjects = JSON.parse(localStorage.getItem('webcut_projects') || '{}');
+                const projectKeys = Object.keys(allProjects);
+
+                if (projectKeys.length === 0) {
+                    container.innerHTML = `<p style="font-size: 12px; color: var(--text-muted); grid-column: 1 / -1; padding: 20px 0;">No saved projects found. Import a project folder or click "Create New Project" to get started.</p>`;
+                    return;
+                }
+
+                projectKeys.forEach(id => {
+                    const proj = allProjects[id];
+                    const card = document.createElement('div');
+                    card.className = 'project-card';
+                    card.innerHTML = `
+                        <div class="project-card-thumb">
+                            <span>🎬 ${proj.clips.length} Clips • ${(proj.assets || []).length} Assets</span>
+                        </div>
+                        <div class="project-card-info">
+                            <span class="project-card-title">${proj.projectName}</span>
+                            <span class="project-card-date">Modified: ${new Date(proj.updatedAt).toLocaleString()}</span>
+                        </div>
+                    `;
+                    card.onclick = () => this.loadProject(proj);
+                    container.appendChild(card);
+                });
+            }
+
+            loadProject(projData) {
+                this.projectId = projData.projectId || ('proj_' + Math.random().toString(36).substr(2, 9));
+                this.projectName = projData.projectName || 'Untitled Project';
+                this.clips = projData.clips || [];
+                this.tracks = projData.tracks || this.tracks;
+                this.duration = projData.duration || 40;
+                this.aspectRatio = projData.aspectRatio || '16:9';
+                this.currentTime = 0;
+                this.selectedClipIds.clear();
+                this.assets = [];
+                this.mediaElementsRegistry = {};
+
+                if (projData.assets && Array.isArray(projData.assets)) {
+                    projData.assets.forEach(ast => {
+                        let url = ast.dataUrl;
+                        if (!url && ast.file) {
+                            url = URL.createObjectURL(ast.file);
+                        }
+                        const loadedAsset = {
+                            id: ast.id,
+                            name: ast.name,
+                            type: ast.type,
+                            dataUrl: ast.dataUrl || '',
+                            url: url
+                        };
+                        this.assets.push(loadedAsset);
+
+                        if (loadedAsset.type === 'video' && url) {
+                            const vid = document.createElement('video');
+                            vid.src = url;
+                            vid.muted = true;
+                            vid.load();
+                            this.mediaElementsRegistry[loadedAsset.id] = vid;
+                        } else if (loadedAsset.type === 'image' && url) {
+                            const img = new Image();
+                            img.src = url;
+                            this.mediaElementsRegistry[loadedAsset.id] = img;
+                        } else if (loadedAsset.type === 'audio' && url) {
+                            const aud = document.createElement('audio');
+                            aud.src = url;
+                            aud.muted = false;
+                            aud.load();
+                            this.mediaElementsRegistry[loadedAsset.id] = aud;
+                        }
+                    });
+                }
+
+                document.getElementById('aspect-ratio-select').value = this.aspectRatio;
+                this.changeAspectRatio(this.aspectRatio);
+
+                document.getElementById('project-title-display').innerText = `WebCut Studio (${this.projectName})`;
+                document.getElementById('homepage-view').style.display = 'none';
+                document.getElementById('editor-workspace').style.display = 'grid';
+
+                this.renderTracksDOM();
+                this.renderMediaLibrary();
+                this.renderCanvas();
+                this.updateTimecodeDisplay();
+            }
+
+            initTTSVoices() {
+                const synth = window.speechSynthesis;
+                const populateVoices = () => {
+                    const voices = synth.getVoices();
+                    const select = document.getElementById('ai-tts-voice');
+                    if (!select) return;
+                    select.innerHTML = '';
+                    voices.forEach((voice, index) => {
+                        const opt = document.createElement('option');
+                        opt.value = voice.name;
+                        opt.textContent = `${voice.name} (${voice.lang})`;
+                        if (voice.default || index === 0) opt.selected = true;
+                        select.appendChild(opt);
+                    });
+                };
+                populateVoices();
+                if (synth.onvoiceschanged !== undefined) {
+                    synth.onvoiceschanged = populateVoices;
+                }
+            }
+
+            async generateAIVoiceover() {
+                const text = document.getElementById('ai-tts-text').value.trim();
+                if (!text) {
+                    this.showToast('Warning', 'Please enter a script for the AI voiceover.');
+                    return;
+                }
+                const voiceName = document.getElementById('ai-tts-voice').value;
+                const rate = parseFloat(document.getElementById('ai-tts-speed').value);
+
+                if (!('speechSynthesis' in window)) {
+                    this.showToast('Error', 'Speech synthesis is not supported in your browser.');
+                    return;
+                }
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = rate;
+                const voices = window.speechSynthesis.getVoices();
+                const selectedVoice = voices.find(v => v.name === voiceName);
+                if (selectedVoice) utterance.voice = selectedVoice;
+
+                if (window.MediaRecorder && window.AudioContext) {
+                    try {
+                        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        const dest = audioCtx.createMediaStreamDestination();
+                        const mediaRecorder = new MediaRecorder(dest.stream);
+                        const chunks = [];
+                        
+                        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+                        mediaRecorder.onstop = () => {
+                            const blob = new Blob(chunks, { type: 'audio/webm' });
+                            const url = URL.createObjectURL(blob);
+                            const assetId = 'tts_' + Math.random().toString(36).substr(2, 9);
+                            
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                                const asset = {
+                                    id: assetId,
+                                    name: `AI Voice: ${text.substring(0, 15)}...`,
+                                    type: 'audio',
+                                    dataUrl: reader.result,
+                                    url: url
+                                };
+                                this.assets.push(asset);
+
+                                const aud = document.createElement('audio');
+                                aud.src = url;
+                                this.mediaElementsRegistry[assetId] = aud;
+
+                                const audioTrack = this.tracks.find(t => t.type === 'audio') || this.tracks[0];
+                                const wordsCount = text.split(/\s+/).length;
+                                const estimatedDuration = Math.max(3, (wordsCount / 2.5) / rate);
+
+                                this.addCustomClip(asset.name, 'audio', audioTrack.id, this.currentTime, estimatedDuration, assetId);
+                                this.renderMediaLibrary();
+                                this.showToast('Success', 'AI Voiceover generated and added to timeline successfully!');
+                            };
+                            reader.readAsDataURL(blob);
+                        };
+
+                        mediaRecorder.start();
+                        window.speechSynthesis.speak(utterance);
+
+                        utterance.onend = () => {
+                            setTimeout(() => {
+                                if (mediaRecorder.state === 'recording') mediaRecorder.stop();
+                            }, 500);
+                        };
+                        return;
+                    } catch (e) {
+                        console.warn('MediaRecorder audio stream capture failed, using direct playback fallback', e);
+                    }
+                }
+
+                window.speechSynthesis.speak(utterance);
+                const assetId = 'tts_' + Math.random().toString(36).substr(2, 9);
+                const asset = {
+                    id: assetId,
+                    name: `AI Voice: ${text.substring(0, 15)}...`,
+                    type: 'audio',
+                    dataUrl: '',
+                    url: ''
+                };
+                this.assets.push(asset);
+                const audioTrack = this.tracks.find(t => t.type === 'audio') || this.tracks[0];
+                const estDur = Math.max(3, text.split(/\s+/).length / 2.5);
+                this.addCustomClip(asset.name, 'audio', audioTrack.id, this.currentTime, estDur, assetId);
+                this.renderMediaLibrary();
+                this.showToast('Success', 'AI Voice spoken and added to timeline!');
+            }
+
+            generateAICaptions() {
+                const style = document.getElementById('ai-caption-style').value;
+                const sampleSentences = [
+                    "Welcome back to the channel!",
+                    "Let's break down this amazing project step by step.",
+                    "Make sure you hit that subscribe button!",
+                    "Everything is fully customizable in real time.",
+                    "Thanks for watching and see you next time!"
+                ];
+
+                const videoTrack = this.tracks.find(t => t.type === 'video') || this.tracks[0];
+                let placementTime = this.currentTime;
+
+                sampleSentences.forEach((sentence) => {
+                    const duration = 3.5;
+                    const clipId = 'clip_' + Math.random().toString(36).substr(2, 9);
+                    const newClip = {
+                        id: clipId,
+                        name: `Caption: ${sentence}`,
+                        type: 'text',
+                        track: videoTrack.id,
+                        startTime: placementTime,
+                        duration: duration,
+                        textContent: sentence,
+                        fontSize: style === 'minimal' ? 36 : 46,
+                        color: style === 'neon' ? '#38bdf8' : '#ffffff',
+                        effect: 'none',
+                        animation: style === 'neon' ? 'flash' : 'fade_in',
+                        volume: 1,
+                        posX: this.canvas.width / 2,
+                        posY: this.canvas.height * 0.82,
+                        width: this.canvas.width * 0.8,
+                        height: 90,
+                        opacity: 1,
+                        rotation: 0,
+                        keyframes: []
+                    };
+                    this.clips.push(newClip);
+                    placementTime += duration + 0.5;
+                });
+
+                this.renderTimelineClips();
+                this.renderCanvas();
+                this.showToast('Captions Generated', '✨ AI Auto-Captions successfully generated and placed on timeline!');
+            }
+
+            initAnimationsList() {
+                const anims = [
+                    { id: 'bw_strobe_flash', name: '⚡ Black & White Strobe Flashes' },
+                    { id: 'fade_in', name: 'Fade In' }, { id: 'fade_out', name: 'Fade Out' }, { id: 'fade_in_out', name: 'Fade In & Out' }, { id: 'flash', name: 'Flash' }, { id: 'pulse', name: 'Pulse' }, { id: 'blink', name: 'Blink' }, { id: 'dissappear', name: 'Disappear / Hide' }, { id: 'appear', name: 'Instant Appear' },
+                    { id: 'slide_left', name: 'Slide In From Left' }, { id: 'slide_right', name: 'Slide In From Right' }, { id: 'slide_above', name: 'Slide In From Above' }, { id: 'slide_down', name: 'Slide In From Down' }, { id: 'slide_out_left', name: 'Slide Out Left' }, { id: 'slide_out_right', name: 'Slide Out Right' }, { id: 'slide_out_above', name: 'Slide Out Above' }, { id: 'slide_out_down', name: 'Slide Out Down' },
+                    { id: 'bounce', name: 'Bounce In' }, { id: 'bounce_up', name: 'Bounce Vertical' }, { id: 'bounce_horiz', name: 'Bounce Horizontal' }, { id: 'elastic_in', name: 'Elastic Zoom In' }, { id: 'elastic_out', name: 'Elastic Zoom Out' }, { id: 'rubber_band', name: 'Rubber Band Stretch' }, { id: 'jello', name: 'Jello Wobble' }, { id: 'swing', name: 'Pendulum Swing' },
+                    { id: 'zoom_in', name: 'Zoom In' }, { id: 'zoom_out', name: 'Zoom Out' }, { id: 'zoom_pulse', name: 'Zoom Pulse Loop' }, { id: 'pop_in', name: 'Pop In' }, { id: 'shrink_out', name: 'Shrink Out' }, { id: 'expand_width', name: 'Expand Width' }, { id: 'expand_height', name: 'Expand Height' }, { id: 'perspective_zoom', name: 'Perspective Zoom' },
+                    { id: 'spin_cw', name: 'Spin Clockwise' }, { id: 'spin_ccw', name: 'Spin Counter-Clockwise' }, { id: 'flip_x', name: 'Flip Horizontal' }, { id: 'flip_y', name: 'Flip Vertical' }, { id: 'rotate_shake', name: 'Rotate Shake' }, { id: 'tilt_left', name: 'Tilt Left' }, { id: 'tilt_right', name: 'Tilt Right' }, { id: 'barrel_roll', name: 'Barrel Roll' },
+                    { id: 'fly_in_diag', name: 'Fly In Diagonal' }, { id: 'fly_out_diag', name: 'Fly Out Diagonal' }, { id: 'arc_motion', name: 'Arc Flight Path' }, { id: 'float_hover', name: 'Floating Hover' }, { id: 'drop_in', name: 'Gravity Drop In' }, { id: 'rocket_up', name: 'Rocket Launch Up' }, { id: 'zigzag', name: 'Zigzag Motion' }, { id: 'orbit', name: 'Circular Orbit' },
+                    { id: 'glitch_shake', name: 'Glitch Shake' }, { id: 'earthquake', name: 'Earthquake Rumble' }, { id: 'strobe', name: 'Strobe Flash' }, { id: 'vhs_jitter', name: 'VHS Jitter' }, { id: 'wave_distortion', name: 'Wave Distortion' }, { id: 'heartbeat', name: 'Heartbeat Pulse' }, { id: 'blur_in', name: 'Focus Blur In' }, { id: 'blur_out', name: 'Focus Blur Out' }
+                ];
+
+                this.allAnimations = anims;
+                const grid = document.getElementById('animations-grid');
+                grid.innerHTML = '';
+
+                anims.forEach(anim => {
+                    const card = document.createElement('div');
+                    card.className = 'effect-card';
+                    card.innerHTML = `<strong>${anim.name}</strong><span style="font-size: 9px; color: var(--text-muted);">Preset Animation</span>`;
+                    card.onclick = () => this.applyAnimation(anim.id);
+                    grid.appendChild(card);
+                });
+            }
+
+            applyAnimation(animId) {
+                if (this.selectedClipIds.size === 0) {
+                    this.showToast('Warning', 'Please select a clip on the timeline first to apply this animation.');
+                    return;
+                }
+                this.selectedClipIds.forEach(id => {
+                    const clip = this.clips.find(c => c.id === id);
+                    if (clip) clip.animation = animId;
+                });
+                const firstId = Array.from(this.selectedClipIds)[0];
+                this.inspectClip(this.clips.find(c => c.id === firstId));
+                this.renderCanvas();
+            }
+
+            initDOMBindings() {
+                const fileInput = document.getElementById('file-input');
+                fileInput.addEventListener('change', (e) => this.handleFileImport(e));
+                
+                const dropZone = document.getElementById('drop-zone');
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropZone.classList.add('dragover');
+                    }, false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropZone.classList.remove('dragover');
+                    }, false);
+                });
+
+                dropZone.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.remove('dragover');
+
+                    const items = e.dataTransfer.items;
+                    if (items && items.length > 0) {
+                        const entries = [];
+                        for (let i = 0; i < items.length; i++) {
+                            const entry = items[i].webkitGetAsEntry ? items[i].webkitGetAsEntry() : null;
+                            if (entry) entries.push(entry);
+                        }
+                        if (entries.length > 0) {
+                            await this.processEntries(entries);
+                            return;
+                        }
+                    }
+
+                    const files = e.dataTransfer.files;
+                    if (files && files.length > 0) {
+                        this.processFiles(files);
+                    }
+                });
+
+                window.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' || e.key === 'Delete') {
+                        if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+                        if (this.selectedClipIds.size > 0) {
+                            e.preventDefault();
+                            this.deleteSelectedClips();
+                        }
+                    }
+                });
+
+                window.addEventListener('click', () => {
+                    document.getElementById('context-menu').style.display = 'none';
+                });
+            }
+
+            async processEntries(entries) {
+                for (let entry of entries) {
+                    if (entry.isFile) {
+                        await new Promise((resolve) => {
+                            entry.file(async (file) => {
+                                await this.handleSingleFile(file);
+                                resolve();
+                            });
+                        });
+                    } else if (entry.isDirectory) {
+                        await this.traverseDirectory(entry);
+                    }
+                }
+            }
+
+            async traverseDirectory(dirEntry) {
+                const reader = dirEntry.createReader();
+                const readEntries = async () => {
+                    return new Promise((resolve) => {
+                        reader.readEntries(async (entries) => {
+                            if (entries.length === 0) {
+                                resolve([]);
+                                return;
+                            }
+                            for (let entry of entries) {
+                                if (entry.isFile) {
+                                    await new Promise((res) => {
+                                        entry.file(async (file) => {
+                                            await this.handleSingleFile(file);
+                                            res();
+                                        });
+                                    });
+                                } else if (entry.isDirectory) {
+                                    await this.traverseDirectory(entry);
+                                }
+                            }
+                            resolve(entries);
+                        });
+                    });
+                };
+                let entries = await readEntries();
+                while (entries.length > 0) {
+                    entries = await readEntries();
+                }
+            }
+
+            // Updated handler to seamlessly support importing either a folder or a .webcut/.json file
+            async handleFolderOrFileImport(e) {
+                const files = e.target.files;
+                if (!files || files.length === 0) return;
+
+                // Check if a single .webcut or .json file was selected
+                if (files.length === 1 && (files[0].name.endsWith('.webcut') || files[0].name.endsWith('.json'))) {
+                    await this.handleSingleFile(files[0]);
+                } else {
+                    // Otherwise treat it as a folder import containing multiple files
+                    await this.processFiles(files);
+                }
+                e.target.value = '';
+            }
+
+            handleFileImport(e) {
+                this.processFiles(e.target.files);
+                e.target.value = '';
+            }
+
+            async processFiles(files) {
+                for (let file of files) {
+                    await this.handleSingleFile(file);
+                }
+            }
+
+            async handleSingleFile(file) {
+                if (file.name.endsWith('.webcut') || file.name.endsWith('.json')) {
+                    try {
+                        const text = await file.text();
+                        const projData = JSON.parse(text);
+                        if (projData.clips && projData.assets) {
+                            this.loadProject(projData);
+                            this.showToast('Project Loaded', `Successfully imported project: ${file.name}`);
+                            return;
+                        }
+                    } catch (err) {
+                        console.warn('Failed to parse file as project bundle', err);
+                    }
+                }
+
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const dataUrl = event.target.result;
+                        const url = URL.createObjectURL(file);
+                        const assetId = 'asset_' + Math.random().toString(36).substr(2, 9);
+                        
+                        let assetType = 'video';
+                        if (file.type.startsWith('image/')) assetType = 'image';
+                        if (file.type.startsWith('audio/') || file.name.endsWith('.mp3') || file.name.endsWith('.wav')) assetType = 'audio';
+
+                        const asset = { id: assetId, name: file.name, type: assetType, dataUrl: dataUrl, url: url, file: file };
+                        this.assets.push(asset);
+
+                        if (assetType === 'video') {
+                            const vid = document.createElement('video');
+                            vid.src = url;
+                            vid.muted = true;
+                            vid.load();
+                            this.mediaElementsRegistry[assetId] = vid;
+                        } else if (assetType === 'image') {
+                            const img = new Image();
+                            img.src = url;
+                            this.mediaElementsRegistry[assetId] = img;
+                        } else if (assetType === 'audio') {
+                            const aud = document.createElement('audio');
+                            aud.src = url;
+                            aud.muted = false; 
+                            aud.load();
+                            this.mediaElementsRegistry[assetId] = aud;
+                        }
+                        this.renderMediaLibrary();
+                        resolve();
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            renderMediaLibrary() {
+                const grid = document.getElementById('media-library-grid');
+                grid.innerHTML = '';
+                
+                this.assets.forEach(asset => {
+                    const item = document.createElement('div');
+                    item.className = 'media-item';
+                    item.draggable = true;
+                    
+                    item.addEventListener('dragstart', (e) => {
+                        const payload = JSON.stringify({ type: 'asset', assetId: asset.id });
+                        e.dataTransfer.setData('application/json', payload);
+                    });
+
+                    item.innerHTML = `
+                        <div class="media-thumb">
+                            ${asset.type === 'image' ? `<img src="${asset.url || asset.dataUrl}">` : 
+                              asset.type === 'video' ? `<video src="${asset.url || asset.dataUrl}"></video>` : 
+                              `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>`}
+                        </div>
+                        <div class="media-title">${asset.name}</div>
+                    `;
+                    
+                    item.onclick = () => this.addClipFromAsset(asset);
+                    grid.appendChild(item);
+                });
+            }
+
+            addClipFromAsset(asset) {
+                const track = asset.type === 'audio' ? (this.tracks.find(t => t.type === 'audio')?.id || this.tracks[0].id) : this.tracks[0].id;
+                this.addCustomClip(asset.name, asset.type, track, this.currentTime, 12, asset.id);
+            }
+
+            addTextClip(textTitle, durationSec) {
+                const targetTrack = this.tracks[0].id;
+                this.addCustomClip(textTitle, 'text', targetTrack, this.currentTime, durationSec);
+            }
+
+            addAudioClip(audioTitle, durationSec) {
+                const targetTrack = this.tracks.find(t => t.type === 'audio')?.id || this.tracks[0].id;
+                this.addCustomClip(audioTitle, 'audio', targetTrack, this.currentTime, durationSec);
+            }
+
+            addCustomClip(name, clipType, track, startTime, duration, assetId = null) {
+                const newClip = {
+                    id: 'clip_' + Math.random().toString(36).substr(2, 9),
+                    assetId: assetId,
+                    name: name,
+                    type: clipType,
+                    track: track,
+                    startTime: startTime,
+                    duration: duration,
+                    textContent: clipType === 'text' ? name : undefined,
+                    fontSize: 48,
+                    color: '#ffffff',
+                    effect: 'none',
+                    animation: 'none',
+                    volume: 1,
+                    posX: this.canvas.width / 2,
+                    posY: this.canvas.height / 2,
+                    width: this.canvas.width / 2,
+                    height: this.canvas.height / 2,
+                    opacity: 1,
+                    rotation: 0,
+                    keyframes: []
+                };
+
+                this.clips.push(newClip);
+                this.renderTimelineClips();
+                this.renderCanvas();
+            }
+
+            applyEffect(effectName) {
+                if (this.selectedClipIds.size === 0) return;
+                this.selectedClipIds.forEach(id => {
+                    const clip = this.clips.find(c => c.id === id);
+                    if (clip) clip.effect = effectName;
+                });
+                const firstId = Array.from(this.selectedClipIds)[0];
+                this.inspectClip(this.clips.find(c => c.id === firstId));
+                this.renderCanvas();
+            }
+
+            renderTracksDOM() {
+                const headerContainer = document.getElementById('tracks-header-container');
+                const lanesWrapper = document.getElementById('track-lanes-wrapper');
+                
+                headerContainer.innerHTML = '';
+                lanesWrapper.innerHTML = '';
+
+                this.tracks.forEach((track, index) => {
+                    const headerEl = document.createElement('div');
+                    headerEl.className = 'track-header-item';
+                    headerEl.innerHTML = `
+                        <input type="text" class="track-header-name" value="${track.name}" onchange="app.renameTrack(${track.id}, this.value)" title="Click to rename layer">
+                        <div class="track-header-actions">
+                            <button onclick="app.moveTrackOrder(${index}, -1)" title="Move Layer Up" ${index === 0 ? 'disabled style="opacity:0.3;cursor:default;"' : ''}>▲</button>
+                            <button onclick="app.moveTrackOrder(${index}, 1)" title="Move Layer Down" ${index === this.tracks.length - 1 ? 'disabled style="opacity:0.3;cursor:default;"' : ''}>▼</button>
+                            <button onclick="app.removeTrack(${track.id})" title="Remove Layer">✕</button>
+                        </div>
+                    `;
+                    headerContainer.appendChild(headerEl);
+
+                    const laneEl = document.createElement('div');
+                    laneEl.className = 'track-lane';
+                    laneEl.setAttribute('data-track', track.id);
+                    lanesWrapper.appendChild(laneEl);
+                });
+
+                this.renderTimelineClips();
+            }
+
+            renameTrack(trackId, newName) {
+                const track = this.tracks.find(t => t.id === trackId);
+                if (track && newName.trim() !== '') track.name = newName.trim();
+            }
+
+            moveTrackOrder(index, direction) {
+                const newIndex = index + direction;
+                if (newIndex < 0 || newIndex >= this.tracks.length) return;
+                
+                const temp = this.tracks[index];
+                this.tracks[index] = this.tracks[newIndex];
+                this.tracks[newIndex] = temp;
+
+                this.renderTracksDOM();
+                this.renderCanvas();
+            }
+
+            addTrack() {
+                const newId = this.tracks.length > 0 ? Math.max(...this.tracks.map(t => t.id)) + 1 : 0;
+                const newTrack = {
+                    id: newId,
+                    name: `Layer ${this.tracks.length + 1}`,
+                    type: 'video'
+                };
+                this.tracks.push(newTrack);
+                this.renderTracksDOM();
+            }
+
+            removeTrack(trackId) {
+                if (this.tracks.length <= 1) {
+                    this.showToast('Warning', 'You must keep at least one active track layer.');
+                    return;
+                }
+                this.tracks = this.tracks.filter(t => t.id !== trackId);
+                const fallbackTrackId = this.tracks[0].id;
+                this.clips.forEach(clip => {
+                    if (clip.track === trackId) clip.track = fallbackTrackId;
+                });
+                this.renderTracksDOM();
+                this.renderCanvas();
+            }
+
+            initTimelineInteraction() {
+                const ruler = document.getElementById('timeline-ruler');
+                const scrollArea = document.getElementById('timeline-scroll');
+                const tracksContent = document.getElementById('tracks-content');
+                const playheadEl = document.getElementById('timeline-playhead');
+
+                const updatePlayheadFromClientX = (clientX) => {
+                    const rect = scrollArea.getBoundingClientRect();
+                    const clickX = clientX - rect.left + scrollArea.scrollLeft;
+                    this.currentTime = Math.max(0, Math.min(this.duration, clickX / this.pixelsPerSecond));
+                    this.updatePlayheadPosition();
+                    this.syncAudioPlayback();
+                    this.renderCanvas();
+                    this.updateTimecodeDisplay();
+                    
+                    const activeClip = this.getActiveSelectedVisualClip();
+                    if (activeClip) this.inspectClip(activeClip);
+                };
+
+                ruler.addEventListener('mousedown', (e) => {
+                    if (e.button === 0 || e.button === 2) updatePlayheadFromClientX(e.clientX);
+                });
+
+                let isDraggingPlayhead = false;
+                playheadEl.addEventListener('mousedown', (e) => {
+                    if (e.button === 0) {
+                        isDraggingPlayhead = true;
+                        e.stopPropagation();
+                    }
+                });
+
+                window.addEventListener('mousemove', (e) => {
+                    if (isDraggingPlayhead) updatePlayheadFromClientX(e.clientX);
+                });
+
+                window.addEventListener('mouseup', () => {
+                    if (isDraggingPlayhead) isDraggingPlayhead = false;
+                });
+
+                let isRMBPanning = false;
+                let panStartX = 0;
+                let panStartScrollLeft = 0;
+
+                const handleRMBDown = (e) => {
+                    if (e.button === 2) {
+                        isRMBPanning = true;
+                        panStartX = e.clientX;
+                        panStartScrollLeft = scrollArea.scrollLeft;
+                        e.preventDefault();
+                    }
+                };
+
+                ruler.addEventListener('mousedown', handleRMBDown);
+                tracksContent.addEventListener('mousedown', handleRMBDown);
+
+                window.addEventListener('mousemove', (e) => {
+                    if (isRMBPanning) {
+                        const deltaX = e.clientX - panStartX;
+                        scrollArea.scrollLeft = panStartScrollLeft - deltaX;
+                    }
+                });
+
+                window.addEventListener('mouseup', (e) => {
+                    if (e.button === 2 && isRMBPanning) isRMBPanning = false;
+                });
+
+                ruler.addEventListener('contextmenu', (e) => e.preventDefault());
+                tracksContent.addEventListener('contextmenu', (e) => {
+                    if (!e.target.classList.contains('clip') && !e.target.classList.contains('clip-title') && !e.target.classList.contains('clip-resize-handle')) {
+                        e.preventDefault();
+                    }
+                });
+
+                const timelineBody = document.getElementById('timeline-body-area');
+                const selectionBox = document.getElementById('selection-box');
+                let isSelectingBox = false;
+                let boxStartX = 0, boxStartY = 0;
+                let hasMovedSignificantly = false;
+
+                timelineBody.addEventListener('mousedown', (e) => {
+                    if (e.button === 0 && (e.target.classList.contains('track-lane') || e.target.id === 'tracks-content')) {
+                        hasMovedSignificantly = false;
+                        if (!e.shiftKey && !e.ctrlKey) this.selectedClipIds.clear();
+                        isSelectingBox = true;
+                        const rect = timelineBody.getBoundingClientRect();
+                        boxStartX = e.clientX - rect.left;
+                        boxStartY = e.clientY - rect.top;
+                        
+                        selectionBox.style.left = `${boxStartX}px`;
+                        selectionBox.style.top = `${boxStartY}px`;
+                        selectionBox.style.width = '0px';
+                        selectionBox.style.height = '0px';
+                        selectionBox.style.display = 'block';
+                    }
+                });
+
+                window.addEventListener('mousemove', (e) => {
+                    if (isSelectingBox) {
+                        const rect = timelineBody.getBoundingClientRect();
+                        const currentX = e.clientX - rect.left;
+                        const currentY = e.clientY - rect.top;
+
+                        if (Math.abs(currentX - boxStartX) > 4 || Math.abs(currentY - boxStartY) > 4) {
+                            hasMovedSignificantly = true;
+                        }
+
+                        const left = Math.min(boxStartX, currentX);
+                        const top = Math.min(boxStartY, currentY);
+                        const width = Math.abs(currentX - boxStartX);
+                        const height = Math.abs(currentY - boxStartY);
+
+                        selectionBox.style.left = `${left}px`;
+                        selectionBox.style.top = `${top}px`;
+                        selectionBox.style.width = `${width}px`;
+                        selectionBox.style.height = `${height}px`;
+
+                        const scrollLeft = scrollArea.scrollLeft;
+                        const absLeft = left + scrollLeft;
+                        const absRight = absLeft + width;
+
+                        this.clips.forEach(clip => {
+                            const clipLeft = clip.startTime * this.pixelsPerSecond;
+                            const clipRight = clipLeft + (clip.duration * this.pixelsPerSecond);
+                            const trackIndex = this.tracks.findIndex(t => t.id === clip.track);
+                            if (trackIndex === -1) return;
+                            const laneTop = trackIndex * 60;
+                            const laneBottom = laneTop + 60;
+
+                            if (!(clipRight < absLeft || clipLeft > absRight || laneBottom < top || laneTop > top + height)) {
+                                this.selectedClipIds.add(clip.id);
+                            }
+                        });
+                        this.renderTimelineClips();
+                    }
+                });
+
+                window.addEventListener('mouseup', (e) => {
+                    if (isSelectingBox) {
+                        isSelectingBox = false;
+                        selectionBox.style.display = 'none';
+
+                        if (!hasMovedSignificantly && this.selectedClipIds.size === 0) {
+                            if (e.target.classList.contains('track-lane') || e.target.id === 'tracks-content') {
+                                updatePlayheadFromClientX(e.clientX);
+                            }
+                        }
+
+                        if (this.selectedClipIds.size > 0) {
+                            const firstId = Array.from(this.selectedClipIds)[0];
+                            this.inspectClip(this.clips.find(c => c.id === firstId));
+                        }
+                    }
+                });
+            }
+
+            initCanvasInteraction() {
+                const getMouseCanvasPos = (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const scaleX = this.canvas.width / rect.width;
+                    const scaleY = this.canvas.height / rect.height;
+                    return {
+                        x: (e.clientX - rect.left) * scaleX,
+                        y: (e.clientY - rect.top) * scaleY
+                    };
+                };
+
+                this.canvas.addEventListener('mousemove', (e) => {
+                    const pos = getMouseCanvasPos(e);
+                    const activeClip = this.getActiveSelectedVisualClip();
+                    if (!activeClip) {
+                        this.canvas.style.cursor = 'default';
+                        return;
+                    }
+
+                    const currentProps = this.getCurrentClipState(activeClip, this.currentTime);
+                    const bounds = this.getClipBoundingBoxFromProps(currentProps);
+                    const handleSize = 14;
+
+                    const isTL = Math.abs(pos.x - bounds.left) < handleSize && Math.abs(pos.y - bounds.top) < handleSize;
+                    const isTR = Math.abs(pos.x - bounds.right) < handleSize && Math.abs(pos.y - bounds.top) < handleSize;
+                    const isBL = Math.abs(pos.x - bounds.left) < handleSize && Math.abs(pos.y - bounds.bottom) < handleSize;
+                    const isBR = Math.abs(pos.x - bounds.right) < handleSize && Math.abs(pos.y - bounds.bottom) < handleSize;
+
+                    if (isTL || isBR) this.canvas.style.cursor = 'nwse-resize';
+                    else if (isTR || isBL) this.canvas.style.cursor = 'nesw-resize';
+                    else if (pos.x >= bounds.left && pos.x <= bounds.right && pos.y >= bounds.top && pos.y <= bounds.bottom) this.canvas.style.cursor = 'move';
+                    else this.canvas.style.cursor = 'default';
+
+                    if (this.activeHandle) {
+                        const dx = pos.x - this.canvasDragStart.x;
+                        const dy = pos.y - this.canvasDragStart.y;
+
+                        let { x, y, w, h } = this.initialClipRect;
+                        let newX = x, newY = y, newW = w, newH = h;
+
+                        if (this.activeHandle === 'move') {
+                            newX = x + dx;
+                            newY = y + dy;
+                        } else if (this.activeHandle === 'br') {
+                            newW = Math.max(20, w + dx);
+                            newH = Math.max(20, h + dy);
+                        } else if (this.activeHandle === 'tl') {
+                            newW = Math.max(20, w - dx);
+                            newH = Math.max(20, h - dy);
+                            newX = x + (w - newW) / 2;
+                            newY = y + (h - newH) / 2;
+                        } else if (this.activeHandle === 'tr') {
+                            newW = Math.max(20, w + dx);
+                            newH = Math.max(20, h - dy);
+                            newX = x + (newW - w) / 2;
+                            newY = y + (h - newH) / 2;
+                        } else if (this.activeHandle === 'bl') {
+                            newW = Math.max(20, w - dx);
+                            newH = Math.max(20, h + dy);
+                            newX = x + (w - newW) / 2;
+                            newY = y + (newH - h) / 2;
+                        }
+
+                        this.setKeyframeProperty(activeClip, this.currentTime, {
+                            posX: newX,
+                            posY: newY,
+                            width: newW,
+                            height: newH
+                        });
+
+                        this.renderCanvas();
+                        this.inspectClip(activeClip);
+                    }
+                });
+
+                this.canvas.addEventListener('mousedown', (e) => {
+                    if (e.button !== 0) return;
+                    const pos = getMouseCanvasPos(e);
+                    const activeClip = this.getActiveSelectedVisualClip();
+
+                    if (activeClip) {
+                        const currentProps = this.getCurrentClipState(activeClip, this.currentTime);
+                        const bounds = this.getClipBoundingBoxFromProps(currentProps);
+                        const handleSize = 14;
+
+                        const isTL = Math.abs(pos.x - bounds.left) < handleSize && Math.abs(pos.y - bounds.top) < handleSize;
+                        const isTR = Math.abs(pos.x - bounds.right) < handleSize && Math.abs(pos.y - bounds.top) < handleSize;
+                        const isBL = Math.abs(pos.x - bounds.left) < handleSize && Math.abs(pos.y - bounds.bottom) < handleSize;
+                        const isBR = Math.abs(pos.x - bounds.right) < handleSize && Math.abs(pos.y - bounds.bottom) < handleSize;
+
+                        if (isTL) this.activeHandle = 'tl';
+                        else if (isTR) this.activeHandle = 'tr';
+                        else if (isBL) this.activeHandle = 'bl';
+                        else if (isBR) this.activeHandle = 'br';
+                        else if (pos.x >= bounds.left && pos.x <= bounds.right && pos.y >= bounds.top && pos.y <= bounds.bottom) {
+                            this.activeHandle = 'move';
+                        }
+
+                        if (this.activeHandle) {
+                            this.canvasDragStart = pos;
+                            this.initialClipRect = {
+                                x: currentProps.posX,
+                                y: currentProps.posY,
+                                w: currentProps.width,
+                                h: currentProps.height
+                            };
+                            return;
+                        }
+                    }
+
+                    const activeClips = this.clips.filter(c => this.currentTime >= c.startTime && this.currentTime <= c.startTime + c.duration);
+                    for (let i = activeClips.length - 1; i >= 0; i--) {
+                        const clip = activeClips[i];
+                        if (clip.type === 'text' || clip.type === 'video' || clip.type === 'image') {
+                            const currentProps = this.getCurrentClipState(clip, this.currentTime);
+                            const bounds = this.getClipBoundingBoxFromProps(currentProps);
+                            if (pos.x >= bounds.left && pos.x <= bounds.right && pos.y >= bounds.top && pos.y <= bounds.bottom) {
+                                this.selectClip(clip.id, true);
+                                this.activeHandle = 'move';
+                                this.canvasDragStart = pos;
+                                this.initialClipRect = {
+                                    x: currentProps.posX,
+                                    y: currentProps.posY,
+                                    w: currentProps.width,
+                                    h: currentProps.height
+                                };
+                                break;
+                            }
+                        }
+                    }
+                });
+
+                window.addEventListener('mouseup', () => {
+                    this.activeHandle = null;
+                });
+            }
+
+            getActiveSelectedVisualClip() {
+                if (this.selectedClipIds.size !== 1) return null;
+                const id = Array.from(this.selectedClipIds)[0];
+                const clip = this.clips.find(c => c.id === id);
+                if (clip && (clip.type === 'video' || clip.type === 'image' || clip.type === 'text')) {
+                    if (this.currentTime >= clip.startTime && this.currentTime <= clip.startTime + clip.duration) {
+                        return clip;
+                    }
+                }
+                return null;
+            }
+
+            getClipBoundingBoxFromProps(props) {
+                return {
+                    left: props.posX - props.width / 2,
+                    right: props.posX + props.width / 2,
+                    top: props.posY - props.height / 2,
+                    bottom: props.posY + props.height / 2
+                };
+            }
+
+            getCurrentClipState(clip, globalTime) {
+                const localTime = Math.max(0, Math.min(clip.duration, globalTime - clip.startTime));
+                let state = {
+                    posX: clip.posX !== undefined ? clip.posX : this.canvas.width / 2,
+                    posY: clip.posY !== undefined ? clip.posY : this.canvas.height / 2,
+                    width: clip.width !== undefined ? clip.width : this.canvas.width / 2,
+                    height: clip.height !== undefined ? clip.height : this.canvas.height / 2,
+                    opacity: clip.opacity !== undefined ? clip.opacity : 1,
+                    rotation: clip.rotation !== undefined ? clip.rotation : 0,
+                    isBWFlash: false
+                };
+
+                if (clip.keyframes && clip.keyframes.length > 0) {
+                    const kfs = [...clip.keyframes].sort((a, b) => a.time - b.time);
+                    let prev = kfs[0];
+                    let next = kfs[kfs.length - 1];
+
+                    if (localTime <= prev.time) state = { ...prev.props };
+                    else if (localTime >= next.time) state = { ...next.props };
+                    else {
+                        for (let i = 0; i < kfs.length - 1; i++) {
+                            if (localTime >= kfs[i].time && localTime <= kfs[i + 1].time) {
+                                prev = kfs[i];
+                                next = kfs[i + 1];
+                                break;
+                            }
+                        }
+                        if (prev.time !== next.time) {
+                            const factor = (localTime - prev.time) / (next.time - prev.time);
+                            state = {
+                                posX: prev.props.posX + (next.props.posX - prev.props.posX) * factor,
+                                posY: prev.props.posY + (next.props.posY - prev.props.posY) * factor,
+                                width: prev.props.width + (next.props.width - prev.props.width) * factor,
+                                height: prev.props.height + (next.props.height - prev.props.height) * factor,
+                                opacity: prev.props.opacity + (next.props.opacity - prev.props.opacity) * factor,
+                                rotation: prev.props.rotation + (next.props.rotation - prev.props.rotation) * factor,
+                                isBWFlash: false
+                            };
+                        }
+                    }
+                }
+
+                const p = clip.duration > 0 ? (localTime / clip.duration) : 0;
+                const anim = clip.animation;
+
+                if (anim === 'bw_strobe_flash') {
+                    const flashVal = Math.sin(p * Math.PI * 25);
+                    state.isBWFlash = true;
+                    state.flashInvert = flashVal > 0;
+                } else if (anim === 'fade_in') {
+                    if (p < 0.25) state.opacity *= (p / 0.25);
+                } else if (anim === 'fade_out') {
+                    if (p > 0.75) state.opacity *= (1 - (p - 0.75) / 0.25);
+                } else if (anim === 'fade_in_out') {
+                    if (p < 0.2) state.opacity *= (p / 0.2);
+                    else if (p > 0.8) state.opacity *= (1 - (p - 0.8) / 0.2);
+                } else if (anim === 'flash') {
+                    state.opacity = Math.sin(p * Math.PI * 12) > 0 ? 1 : 0.1;
+                } else if (anim === 'pulse' || anim === 'heartbeat') {
+                    const scale = 1 + Math.sin(p * Math.PI * 8) * 0.15;
+                    state.width *= scale; state.height *= scale;
+                } else if (anim === 'blink') {
+                    state.opacity = Math.floor(p * 15) % 2 === 0 ? 1 : 0;
+                } else if (anim === 'dissappear') {
+                    if (p > 0.7) state.opacity = 0;
+                } else if (anim === 'appear') {
+                    if (p < 0.1) state.opacity = 0;
+                } else if (anim === 'slide_left') {
+                    if (p < 0.3) state.posX += (1 - (p / 0.3)) * -600;
+                } else if (anim === 'slide_right') {
+                    if (p < 0.3) state.posX += (1 - (p / 0.3)) * 600;
+                } else if (anim === 'slide_above') {
+                    if (p < 0.3) state.posY += (1 - (p / 0.3)) * -400;
+                } else if (anim === 'slide_down') {
+                    if (p < 0.3) state.posY += (1 - (p / 0.3)) * 400;
+                } else if (anim === 'slide_out_left') {
+                    if (p > 0.7) state.posX -= ((p - 0.7) / 0.3) * 600;
+                } else if (anim === 'slide_out_right') {
+                    if (p > 0.7) state.posX += ((p - 0.7) / 0.3) * 600;
+                } else if (anim === 'slide_out_above') {
+                    if (p > 0.7) state.posY -= ((p - 0.7) / 0.3) * 400;
+                } else if (anim === 'slide_out_down') {
+                    if (p > 0.7) state.posY += ((p - 0.7) / 0.3) * 400;
+                } else if (anim === 'bounce' || anim === 'elastic_in') {
+                    if (p < 0.4) {
+                        const b = Math.abs(Math.sin(p * Math.PI * 4)) * (1 - p / 0.4);
+                        state.height *= (1 + b); state.width *= (1 + b);
+                    }
+                } else if (anim === 'bounce_up') {
+                    state.posY += Math.sin(p * Math.PI * 6) * 30 * (1 - p);
+                } else if (anim === 'bounce_horiz') {
+                    state.posX += Math.sin(p * Math.PI * 6) * 30 * (1 - p);
+                } else if (anim === 'elastic_out') {
+                    if (p > 0.6) {
+                        const b = Math.sin((p - 0.6) * Math.PI * 5) * 0.2;
+                        state.width *= (1 + b); state.height *= (1 + b);
+                    }
+                } else if (anim === 'rubber_band') {
+                    const rb = Math.sin(p * Math.PI * 6) * 0.2 * (1 - p);
+                    state.width *= (1 + rb); state.height *= (1 - rb);
+                } else if (anim === 'jello' || anim === 'shake' || anim === 'glitch_shake' || anim === 'earthquake') {
+                    state.posX += (Math.random() - 0.5) * 12;
+                    state.posY += (Math.random() - 0.5) * 12;
+                } else if (anim === 'swing') {
+                    state.rotation += Math.sin(p * Math.PI * 4) * 15 * (1 - p);
+                } else if (anim === 'zoom_in' || anim === 'pop_in') {
+                    if (p < 0.3) {
+                        const sc = (p / 0.3);
+                        state.width *= sc; state.height *= sc;
+                    }
+                } else if (anim === 'zoom_out' || anim === 'shrink_out') {
+                    if (p > 0.7) {
+                        const sc = (1 - (p - 0.7) / 0.3);
+                        state.width *= sc; state.height *= sc;
+                    }
+                } else if (anim === 'zoom_pulse') {
+                    const zp = 1 + Math.sin(p * Math.PI * 6) * 0.08;
+                    state.width *= zp; state.height *= zp;
+                } else if (anim === 'expand_width') {
+                    if (p < 0.3) state.width *= (p / 0.3);
+                } else if (anim === 'expand_height') {
+                    if (p < 0.3) state.height *= (p / 0.3);
+                } else if (anim === 'spin_cw' || anim === 'barrel_roll') {
+                    state.rotation += p * 360;
+                } else if (anim === 'spin_ccw') {
+                    state.rotation -= p * 360;
+                } else if (anim === 'flip_x') {
+                    state.width *= Math.cos(p * Math.PI * 4);
+                } else if (anim === 'flip_y') {
+                    state.height *= Math.cos(p * Math.PI * 4);
+                } else if (anim === 'rotate_shake') {
+                    state.rotation += Math.sin(p * Math.PI * 16) * 8;
+                } else if (anim === 'tilt_left') {
+                    state.rotation = -12;
+                } else if (anim === 'tilt_right') {
+                    state.rotation = 12;
+                } else if (anim === 'fly_in_diag') {
+                    if (p < 0.3) {
+                        const f = (1 - p / 0.3);
+                        state.posX -= f * 400; state.posY -= f * 300;
+                    }
+                } else if (anim === 'fly_out_diag') {
+                    if (p > 0.7) {
+                        const f = ((p - 0.7) / 0.3);
+                        state.posX += f * 400; state.posY += f * 300;
+                    }
+                } else if (anim === 'arc_motion') {
+                    state.posX += Math.sin(p * Math.PI) * 150;
+                    state.posY -= Math.sin(p * Math.PI) * 100;
+                } else if (anim === 'float_hover' || anim === 'wave_distortion') {
+                    state.posY += Math.sin(p * Math.PI * 6) * 12;
+                } else if (anim === 'drop_in') {
+                    if (p < 0.25) {
+                        const drop = (1 - (p / 0.25));
+                        state.posY -= drop * 500;
+                    }
+                } else if (anim === 'rocket_up') {
+                    state.posY -= p * 600;
+                } else if (anim === 'zigzag') {
+                    state.posX += Math.sin(p * Math.PI * 8) * 40;
+                    state.posY += Math.cos(p * Math.PI * 8) * 20;
+                } else if (anim === 'orbit') {
+                    state.posX += Math.cos(p * Math.PI * 4) * 60;
+                    state.posY += Math.sin(p * Math.PI * 4) * 60;
+                } else if (anim === 'strobe') {
+                    state.opacity = Math.floor(p * 30) % 2 === 0 ? 1 : 0.2;
+                } else if (anim === 'vhs_jitter') {
+                    state.posX += (Math.random() - 0.5) * 8;
+                }
+
+                return state;
+            }
+
+            addKeyframeAtCurrentTime() {
+                const activeClip = this.getActiveSelectedVisualClip();
+                if (!activeClip) return;
+                const localTime = Math.max(0, Math.min(activeClip.duration, this.currentTime - activeClip.startTime));
+                
+                if (!activeClip.keyframes) activeClip.keyframes = [];
+
+                const existingIdx = activeClip.keyframes.findIndex(kf => Math.abs(kf.time - localTime) < 0.1);
+                const currentState = this.getCurrentClipState(activeClip, this.currentTime);
+
+                if (existingIdx >= 0) {
+                    activeClip.keyframes[existingIdx].props = { ...currentState };
+                } else {
+                    activeClip.keyframes.push({
+                        time: localTime,
+                        props: { ...currentState }
+                    });
+                }
+
+                this.renderTimelineClips();
+                this.inspectClip(activeClip);
+            }
+
+            setKeyframeProperty(clip, globalTime, updatedProps) {
+                const localTime = Math.max(0, Math.min(clip.duration, globalTime - clip.startTime));
+                if (!clip.keyframes) clip.keyframes = [];
+
+                let existing = clip.keyframes.find(kf => Math.abs(kf.time - localTime) < 0.1);
+                const currentState = this.getCurrentClipState(clip, globalTime);
+                const mergedProps = { ...currentState, ...updatedProps };
+
+                if (existing) existing.props = mergedProps;
+                else {
+                    clip.keyframes.push({
+                        time: localTime,
+                        props: mergedProps
+                    });
+                }
+                this.renderTimelineClips();
+            }
+
+            handleTemplateDragStart(e, clipType, name, duration) {
+                const payload = JSON.stringify({ type: 'template', clipType, name, duration });
+                e.dataTransfer.setData('application/json', payload);
+            }
+
+            switchTab(tabName, evt) {
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                evt.currentTarget.classList.add('active');
+                document.getElementById(`tab-${tabName}`).classList.add('active');
+            }
+
+            renderTimelineClips() {
+                document.querySelectorAll('.track-lane').forEach(lane => lane.innerHTML = '');
+
+                this.clips.forEach(clip => {
+                    const lane = document.querySelector(`.track-lane[data-track="${clip.track}"]`);
+                    if (!lane) return;
+
+                    const clipEl = document.createElement('div');
+                    clipEl.className = `clip ${this.selectedClipIds.has(clip.id) ? 'selected' : ''}`;
+                    clipEl.style.left = `${clip.startTime * this.pixelsPerSecond}px`;
+                    clipEl.style.width = `${clip.duration * this.pixelsPerSecond}px`;
+                    
+                    let innerHTML = `
+                        <span class="clip-title">${clip.name}</span>
+                        <div class="clip-resize-handle" title="Drag to extend/shorten duration"></div>
+                    `;
+
+                    if (clip.keyframes) {
+                        clip.keyframes.forEach(kf => {
+                            const kfLeftPercent = (kf.time / clip.duration) * 100;
+                            innerHTML += `<div class="keyframe-marker" style="left: ${kfLeftPercent}%;" title="Keyframe at ${kf.time.toFixed(1)}s"></div>`;
+                        });
+                    }
+
+                    clipEl.innerHTML = innerHTML;
+
+                    clipEl.addEventListener('mousedown', (e) => {
+                        if (e.button !== 0) return;
+                        
+                        if (e.target.classList.contains('clip-resize-handle')) {
+                            e.stopPropagation();
+                            let startMouseX = e.clientX;
+                            let initialDuration = clip.duration;
+                            const snapThresholdPx = 10;
+
+                            const onResizeMove = (moveEvent) => {
+                                const deltaX = moveEvent.clientX - startMouseX;
+                                let newDuration = Math.max(0.5, initialDuration + (deltaX / this.pixelsPerSecond));
+                                let proposedRightPx = (clip.startTime + newDuration) * this.pixelsPerSecond;
+
+                                let snapPx = null;
+                                this.clips.forEach(other => {
+                                    if (other.id === clip.id) return;
+                                    const otherStartPx = other.startTime * this.pixelsPerSecond;
+                                    const otherEndPx = (other.startTime + other.duration) * this.pixelsPerSecond;
+
+                                    if (Math.abs(proposedRightPx - otherStartPx) <= snapThresholdPx) snapPx = otherStartPx;
+                                    if (Math.abs(proposedRightPx - otherEndPx) <= snapThresholdPx) snapPx = otherEndPx;
+                                });
+
+                                if (snapPx !== null) {
+                                    newDuration = Math.max(0.5, (snapPx / this.pixelsPerSecond) - clip.startTime);
+                                }
+
+                                clip.duration = newDuration;
+                                clipEl.style.width = `${clip.duration * this.pixelsPerSecond}px`;
+                            };
+
+                            const onResizeUp = () => {
+                                window.removeEventListener('mousemove', onResizeMove);
+                                window.removeEventListener('mouseup', onResizeUp);
+                                this.renderTimelineClips();
+                                const firstSelectedId = Array.from(this.selectedClipIds)[0];
+                                if (firstSelectedId === clip.id) this.inspectClip(clip);
+                            };
+
+                            window.addEventListener('mousemove', onResizeMove);
+                            window.addEventListener('mouseup', onResizeUp);
+                            return;
+                        }
+
+                        e.stopPropagation();
+                        if (e.shiftKey || e.ctrlKey) {
+                            if (this.selectedClipIds.has(clip.id)) this.selectedClipIds.delete(clip.id);
+                            else this.selectedClipIds.add(clip.id);
+                        } else {
+                            if (!this.selectedClipIds.has(clip.id)) {
+                                this.selectedClipIds.clear();
+                                this.selectedClipIds.add(clip.id);
+                            }
+                        }
+                        this.renderTimelineClips();
+                        this.inspectClip(clip);
+                    });
+
+                    clipEl.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        if (!this.selectedClipIds.has(clip.id)) {
+                            this.selectedClipIds.clear();
+                            this.selectedClipIds.add(clip.id);
+                            this.renderTimelineClips();
+                        }
+                        const menu = document.getElementById('context-menu');
+                        menu.style.display = 'block';
+                        menu.style.left = `${e.clientX}px`;
+                        menu.style.top = `${e.clientY}px`;
+                    });
+
+                    let isDraggingClip = false;
+                    let startMouseX = 0;
+                    let initialStartTime = clip.startTime;
+                    const snapThresholdPx = 10;
+
+                    const onMouseMove = (moveEvent) => {
+                        if (isDraggingClip) {
+                            const deltaX = moveEvent.clientX - startMouseX;
+                            let newStartTime = Math.max(0, initialStartTime + (deltaX / this.pixelsPerSecond));
+                            let proposedLeftPx = newStartTime * this.pixelsPerSecond;
+                            let proposedRightPx = (newStartTime + clip.duration) * this.pixelsPerSecond;
+
+                            let snapDeltaTime = 0;
+                            let hasSnapped = false;
+
+                            this.clips.forEach(other => {
+                                if (other.id === clip.id) return;
+                                const otherStartPx = other.startTime * this.pixelsPerSecond;
+                                const otherEndPx = (other.startTime + other.duration) * this.pixelsPerSecond;
+
+                                if (!hasSnapped && Math.abs(proposedLeftPx - otherStartPx) <= snapThresholdPx) {
+                                    snapDeltaTime = (otherStartPx / this.pixelsPerSecond) - newStartTime;
+                                    hasSnapped = true;
+                                }
+                                if (!hasSnapped && Math.abs(proposedLeftPx - otherEndPx) <= snapThresholdPx) {
+                                    snapDeltaTime = (otherEndPx / this.pixelsPerSecond) - newStartTime;
+                                    hasSnapped = true;
+                                }
+
+                                if (!hasSnapped && Math.abs(proposedRightPx - otherStartPx) <= snapThresholdPx) {
+                                    snapDeltaTime = ((otherStartPx - clip.duration * this.pixelsPerSecond) / this.pixelsPerSecond) - newStartTime;
+                                    hasSnapped = true;
+                                }
+                                if (!hasSnapped && Math.abs(proposedRightPx - otherEndPx) <= snapThresholdPx) {
+                                    snapDeltaTime = ((otherEndPx - clip.duration * this.pixelsPerSecond) / this.pixelsPerSecond) - newStartTime;
+                                    hasSnapped = true;
+                                }
+                            });
+
+                            if (hasSnapped) {
+                                newStartTime += snapDeltaTime;
+                            }
+
+                            clip.startTime = Math.max(0, newStartTime);
+                            
+                            document.querySelectorAll('.track-lane').forEach((laneEl) => {
+                                const rect = laneEl.getBoundingClientRect();
+                                if (moveEvent.clientY >= rect.top && moveEvent.clientY <= rect.bottom) {
+                                    clip.track = parseInt(laneEl.getAttribute('data-track'));
+                                }
+                            });
+
+                            this.renderTimelineClips();
+                        }
+                    };
+
+                    const onMouseUp = () => {
+                        if (isDraggingClip) {
+                            isDraggingClip = false;
+                            window.removeEventListener('mousemove', onMouseMove);
+                            window.removeEventListener('mouseup', onMouseUp);
+                        }
+                    };
+
+                    clipEl.addEventListener('mousedown', (e) => {
+                        if (e.button === 0 && !e.target.classList.contains('clip-resize-handle') && !e.target.classList.contains('keyframe-marker')) {
+                            isDraggingClip = true;
+                            startMouseX = e.clientX;
+                            initialStartTime = clip.startTime;
+                            window.addEventListener('mousemove', onMouseMove);
+                            window.addEventListener('mouseup', onMouseUp);
+                        }
+                    });
+
+                    lane.appendChild(clipEl);
+                });
+            }
+
+            selectClip(clipId, clearOther = true) {
+                if (clearOther) this.selectedClipIds.clear();
+                this.selectedClipIds.add(clipId);
+                this.renderTimelineClips();
+                const clip = this.clips.find(c => c.id === clipId);
+                if (clip) this.inspectClip(clip);
+            }
+
+            inspectClip(clip) {
+                const panel = document.getElementById('inspector-content');
+                if (!clip) {
+                    panel.innerHTML = `<p style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">Select a clip on the timeline to edit properties, volume, position, or add keyframes.</p>`;
+                    return;
+                }
+
+                const currentProps = this.getCurrentClipState(clip, this.currentTime);
+
+                let html = `
+                    <div class="prop-group">
+                        <label>Clip Title</label>
+                        <input type="text" value="${clip.name}" oninput="app.updateClipProp('${clip.id}', 'name', this.value)">
+                    </div>
+                    <div class="prop-row">
+                        <div class="prop-group">
+                            <label>Start (s)</label>
+                            <input type="number" step="0.1" value="${clip.startTime.toFixed(1)}" onchange="app.updateClipProp('${clip.id}', 'startTime', parseFloat(this.value))">
+                        </div>
+                        <div class="prop-group">
+                            <label>Duration (s)</label>
+                            <input type="number" step="0.1" value="${clip.duration.toFixed(1)}" onchange="app.updateClipProp('${clip.id}', 'duration', parseFloat(this.value))">
+                        </div>
+                    </div>
+                `;
+
+                if (clip.type === 'audio' || clip.type === 'video') {
+                    html += `
+                        <div class="prop-group" style="margin-top:10px;">
+                            <label>Volume Level (${Math.round((clip.volume !== undefined ? clip.volume : 1) * 100)}%)</label>
+                            <input type="range" min="0" max="1" step="0.05" value="${clip.volume !== undefined ? clip.volume : 1}" oninput="app.updateClipVolume('${clip.id}', parseFloat(this.value))">
+                        </div>
+                    `;
+                }
+
+                if (clip.type === 'video' || clip.type === 'image') {
+                    html += `
+                        <button class="keyframe-btn" onclick="app.addKeyframeAtCurrentTime()">➕ Add Keyframe at Playhead</button>
+                        <div class="prop-row" style="margin-top:10px;">
+                            <div class="prop-group">
+                                <label>Width (px)</label>
+                                <input type="number" value="${Math.round(currentProps.width)}" oninput="app.updateKeyframeProp('${clip.id}', 'width', parseFloat(this.value))">
+                            </div>
+                            <div class="prop-group">
+                                <label>Height (px)</label>
+                                <input type="number" value="${Math.round(currentProps.height)}" oninput="app.updateKeyframeProp('${clip.id}', 'height', parseFloat(this.value))">
+                            </div>
+                        </div>
+                        <div class="prop-row">
+                            <div class="prop-group">
+                                <label>Position X</label>
+                                <input type="number" value="${Math.round(currentProps.posX)}" oninput="app.updateKeyframeProp('${clip.id}', 'posX', parseFloat(this.value))">
+                            </div>
+                            <div class="prop-group">
+                                <label>Position Y</label>
+                                <input type="number" value="${Math.round(currentProps.posY)}" oninput="app.updateKeyframeProp('${clip.id}', 'posY', parseFloat(this.value))">
+                            </div>
+                        </div>
+                        <div class="prop-row">
+                            <div class="prop-group">
+                                <label>Opacity (0-1)</label>
+                                <input type="number" step="0.1" min="0" max="1" value="${currentProps.opacity.toFixed(1)}" oninput="app.updateKeyframeProp('${clip.id}', 'opacity', parseFloat(this.value))">
+                            </div>
+                            <div class="prop-group">
+                                <label>Rotation (°)</label>
+                                <input type="number" value="${Math.round(currentProps.rotation)}" oninput="app.updateKeyframeProp('${clip.id}', 'rotation', parseFloat(this.value))">
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (clip.type === 'text') {
+                    html += `
+                        <button class="keyframe-btn" onclick="app.addKeyframeAtCurrentTime()">➕ Add Keyframe at Playhead</button>
+                        <div class="prop-group" style="margin-top:10px;">
+                            <label>Text Content</label>
+                            <input type="text" value="${clip.textContent}" oninput="app.updateClipProp('${clip.id}', 'textContent', this.value)">
+                        </div>
+                        <div class="prop-group">
+                            <label>Font Size</label>
+                            <input type="number" value="${clip.fontSize}" oninput="app.updateClipProp('${clip.id}', 'fontSize', parseInt(this.value))">
+                        </div>
+                        <div class="prop-group">
+                            <label>Text Color</label>
+                            <input type="color" value="${clip.color}" oninput="app.updateClipProp('${clip.id}', 'color', this.value)">
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div class="prop-group" style="margin-top:10px;">
+                        <label>Active Animation</label>
+                        <input type="text" readonly value="${clip.animation || 'none'}" style="color:var(--accent); font-weight:600;">
+                    </div>
+                    <div class="prop-group" style="margin-top:10px;">
+                        <label>Active Effect Profile</label>
+                        <input type="text" readonly value="${clip.effect || 'none'}" style="color:var(--success); font-weight:600;">
+                    </div>
+                `;
+
+                panel.innerHTML = html;
+            }
+
+            updateClipProp(clipId, prop, value) {
+                const clip = this.clips.find(c => c.id === clipId);
+                if (clip) {
+                    clip[prop] = value;
+                    this.renderTimelineClips();
+                    this.renderCanvas();
+                }
+            }
+
+            updateClipVolume(clipId, val) {
+                const clip = this.clips.find(c => c.id === clipId);
+                if (clip) {
+                    clip.volume = val;
+                    if (clip.assetId && this.mediaElementsRegistry[clip.assetId]) {
+                        this.mediaElementsRegistry[clip.assetId].volume = val;
+                    }
+                    this.inspectClip(clip);
+                }
+            }
+
+            updateKeyframeProp(clipId, prop, value) {
+                const clip = this.clips.find(c => c.id === clipId);
+                if (clip) {
+                    this.setKeyframeProperty(clip, this.currentTime, { [prop]: value });
+                    this.renderCanvas();
+                }
+            }
+
+            deleteSelectedClips() {
+                if (this.selectedClipIds.size === 0) return;
+                this.clips = this.clips.filter(c => !this.selectedClipIds.has(c.id));
+                this.selectedClipIds.clear();
+                document.getElementById('inspector-content').innerHTML = `<p style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">Select a clip on the timeline to edit properties, volume, position, or add keyframes.</p>`;
+                this.renderTimelineClips();
+                this.renderCanvas();
+            }
+
+            splitClipAtPlayhead() {
+                const activeClips = this.clips.filter(c => this.currentTime >= c.startTime && this.currentTime <= c.startTime + c.duration);
+                if (activeClips.length === 0) return;
+
+                activeClips.forEach(activeClip => {
+                    const splitOffset = this.currentTime - activeClip.startTime;
+                    if (splitOffset <= 0.2 || splitOffset >= activeClip.duration - 0.2) return;
+
+                    const secondHalf = {
+                        ...activeClip,
+                        id: 'clip_' + Math.random().toString(36).substr(2, 9),
+                        startTime: this.currentTime,
+                        duration: activeClip.duration - splitOffset,
+                        keyframes: (activeClip.keyframes || []).map(kf => ({
+                            time: Math.max(0, kf.time - splitOffset),
+                            props: { ...kf.props }
+                        })).filter(kf => kf.time < (activeClip.duration - splitOffset))
+                    };
+
+                    activeClip.duration = splitOffset;
+                    activeClip.keyframes = (activeClip.keyframes || []).filter(kf => kf.time <= splitOffset);
+                    this.clips.push(secondHalf);
+                });
+
+                this.renderTimelineClips();
+                this.renderCanvas();
+            }
+
+            ctxSplit() { this.splitClipAtPlayhead(); }
+            ctxDuplicate() {
+                const newClips = [];
+                this.selectedClipIds.forEach(id => {
+                    const clip = this.clips.find(c => c.id === id);
+                    if (clip) {
+                        const dup = {
+                            ...clip,
+                            id: 'clip_' + Math.random().toString(36).substr(2, 9),
+                            startTime: clip.startTime + clip.duration,
+                            keyframes: (clip.keyframes || []).map(kf => ({ time: kf.time, props: { ...kf.props } }))
+                        };
+                        newClips.push(dup);
+                    }
+                });
+                this.clips.push(...newClips);
+                this.renderTimelineClips();
+                this.renderCanvas();
+            }
+            ctxDelete() { this.deleteSelectedClips(); }
+
+            togglePlay() {
+                this.isPlaying = !this.isPlaying;
+                const btnIcon = document.getElementById('play-icon');
+                
+                if (this.isPlaying) {
+                    btnIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+                    this.lastFrameTime = performance.now();
+                    this.syncAudioPlayback();
+                    requestAnimationFrame((t) => this.animationLoop(t));
+                } else {
+                    btnIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+                    this.pauseAllAudio();
+                }
+            }
+
+            syncAudioPlayback() {
+                for (const assetId in this.mediaElementsRegistry) {
+                    const el = this.mediaElementsRegistry[assetId];
+                    if (el.tagName === 'AUDIO' || el.tagName === 'VIDEO') {
+                        const activeClips = this.clips.filter(c => c.assetId === assetId && this.currentTime >= c.startTime && this.currentTime <= c.startTime + c.duration);
+                        if (activeClips.length > 0 && this.isPlaying) {
+                            const activeClip = activeClips[0];
+                            const clipOffset = this.currentTime - activeClip.startTime;
+                            if (Math.abs(el.currentTime - clipOffset) > 0.4) el.currentTime = clipOffset;
+                            el.volume = activeClip.volume !== undefined ? activeClip.volume : 1;
+                            el.play().catch(e => {});
+                        } else {
+                            el.pause();
+                        }
+                    }
+                }
+            }
+
+            pauseAllAudio() {
+                for (const assetId in this.mediaElementsRegistry) {
+                    const el = this.mediaElementsRegistry[assetId];
+                    if (el.tagName === 'AUDIO' || el.tagName === 'VIDEO') el.pause();
+                }
+            }
+
+            animationLoop(timestamp) {
+                if (!this.isPlaying) return;
+
+                const delta = (timestamp - this.lastFrameTime) / 1000;
+                this.lastFrameTime = timestamp;
+
+                this.currentTime += delta;
+                if (this.currentTime >= this.duration) {
+                    this.currentTime = 0;
+                    this.isPlaying = false;
+                    document.getElementById('play-icon').innerHTML = '<path d="M8 5v14l11-7z"/>';
+                    this.pauseAllAudio();
+                }
+
+                this.updatePlayheadPosition();
+                this.syncAudioPlayback();
+                this.renderCanvas();
+                this.updateTimecodeDisplay();
+
+                const activeClip = this.getActiveSelectedVisualClip();
+                if (activeClip) this.inspectClip(activeClip);
+
+                if (this.isPlaying) {
+                    requestAnimationFrame((t) => this.animationLoop(t));
+                }
+            }
+
+            updatePlayheadPosition() {
+                const px = this.currentTime * this.pixelsPerSecond;
+                document.getElementById('timeline-playhead').style.left = `${px}px`;
+            }
+
+            skipBackward() {
+                this.currentTime = Math.max(0, this.currentTime - 1);
+                this.updatePlayheadPosition();
+                this.syncAudioPlayback();
+                this.renderCanvas();
+                this.updateTimecodeDisplay();
+            }
+
+            skipForward() {
+                this.currentTime = Math.min(this.duration, this.currentTime + 1);
+                this.updatePlayheadPosition();
+                this.syncAudioPlayback();
+                this.renderCanvas();
+                this.updateTimecodeDisplay();
+            }
+
+            zoomTimeline(delta) {
+                this.pixelsPerSecond = Math.max(25, Math.min(250, this.pixelsPerSecond + delta * 50));
+                document.getElementById('zoom-level-label').innerText = `Zoom: ${Math.round((this.pixelsPerSecond / 50) * 100)}%`;
+                const contentWidth = `${this.duration * this.pixelsPerSecond}px`;
+                document.getElementById('timeline-ruler').style.width = contentWidth;
+                document.getElementById('tracks-content').style.width = contentWidth;
+                this.renderTimelineClips();
+                this.updatePlayheadPosition();
+            }
+
+            updateTimecodeDisplay() {
+                const format = (secs) => {
+                    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+                    const s = Math.floor(secs % 60).toString().padStart(2, '0');
+                    const ms = Math.floor((secs % 1) * 100).toString().padStart(2, '0');
+                    return `${m}:${s}:${ms}`;
+                };
+                document.getElementById('current-timecode').innerText = `${format(this.currentTime)} / ${format(this.duration)}`;
+            }
+
+            renderCanvas(targetCtx = this.ctx, targetCanvas = this.canvas, timeOverride = null) {
+                const time = timeOverride !== null ? timeOverride : this.currentTime;
+                
+                targetCtx.fillStyle = '#000000';
+                targetCtx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
+
+                const activeClips = this.clips.filter(c => time >= c.startTime && time <= c.startTime + c.duration);
+                activeClips.sort((a, b) => {
+                    const trackAIndex = this.tracks.findIndex(t => t.id === a.track);
+                    const trackBIndex = this.tracks.findIndex(t => t.id === b.track);
+                    return trackAIndex - trackBIndex;
+                });
+
+                activeClips.forEach(clip => {
+                    targetCtx.save();
+                    
+                    const currentProps = this.getCurrentClipState(clip, time);
+
+                    if (currentProps.isBWFlash) {
+                        targetCtx.filter = currentProps.flashInvert ? 'grayscale(100%) invert(100%) contrast(250%)' : 'grayscale(100%) contrast(250%)';
+                    } else if (clip.effect === 'grayscale') {
+                        targetCtx.filter = 'grayscale(100%)';
+                    } else if (clip.effect === 'blur') {
+                        targetCtx.filter = 'blur(8px)';
+                    } else if (clip.effect === 'glitch') {
+                        targetCtx.filter = 'invert(25%) hue-rotate(120deg)';
+                    }
+
+                    targetCtx.globalAlpha = Math.max(0, Math.min(1, currentProps.opacity));
+
+                    if (currentProps.opacity <= 0.01) {
+                        targetCtx.restore();
+                        return;
+                    }
+
+                    if (clip.type === 'video' || clip.type === 'image') {
+                        const mediaEl = this.mediaElementsRegistry[clip.assetId];
+                        if (mediaEl) {
+                            if (clip.type === 'video' && mediaEl.readyState >= 2) {
+                                const clipTime = (time - clip.startTime);
+                                if (timeOverride === null && Math.abs(mediaEl.currentTime - clipTime) > 0.4) {
+                                    mediaEl.currentTime = clipTime;
+                                }
+                                mediaEl.volume = clip.volume !== undefined ? clip.volume : 1;
+                            }
+                            const posX = (currentProps.posX / this.canvas.width) * targetCanvas.width;
+                            const posY = (currentProps.posY / this.canvas.height) * targetCanvas.height;
+                            const w = (currentProps.width / this.canvas.width) * targetCanvas.width;
+                            const h = (currentProps.height / this.canvas.height) * targetCanvas.height;
+                            const rot = currentProps.rotation * Math.PI / 180;
+
+                            targetCtx.translate(posX, posY);
+                            if (rot !== 0) targetCtx.rotate(rot);
+                            targetCtx.drawImage(mediaEl, -w / 2, -h / 2, w, h);
+                        }
+                    } else if (clip.type === 'text') {
+                        targetCtx.fillStyle = clip.color || '#ffffff';
+                        const scaleFactor = targetCanvas.width / this.canvas.width;
+                        targetCtx.font = `bold ${Math.round((clip.fontSize || 48) * scaleFactor)}px sans-serif`;
+                        targetCtx.textAlign = 'center';
+                        targetCtx.textBaseline = 'middle';
+                        targetCtx.shadowColor = 'rgba(0,0,0,0.85)';
+                        targetCtx.shadowBlur = 16 * scaleFactor;
+                        
+                        const posX = (currentProps.posX / this.canvas.width) * targetCanvas.width;
+                        const posY = (currentProps.posY / this.canvas.height) * targetCanvas.height;
+                        const rot = currentProps.rotation * Math.PI / 180;
+
+                        targetCtx.translate(posX, posY);
+                        if (rot !== 0) targetCtx.rotate(rot);
+                        targetCtx.fillText(clip.textContent, 0, 0);
+                    }
+
+                    targetCtx.restore();
+
+                    if (targetCanvas === this.canvas && this.selectedClipIds.size === 1 && this.selectedClipIds.has(clip.id)) {
+                        targetCtx.save();
+                        const bounds = this.getClipBoundingBoxFromProps(currentProps);
+                        targetCtx.strokeStyle = '#6366f1';
+                        targetCtx.lineWidth = 2;
+                        targetCtx.strokeRect(bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top);
+                        targetCtx.restore();
+                    }
+                });
+            }
+
+            newProject() {
+                this.saveCurrentProjectState();
+                this.createNewProjectFromHome();
+            }
+
+            openExportModal() {
+                document.getElementById('export-modal').style.display = 'flex';
+            }
+
+            closeExportModal() {
+                document.getElementById('export-modal').style.display = 'none';
+                document.getElementById('export-progress-container').style.display = 'none';
+                document.getElementById('export-modal-buttons').style.display = 'flex';
+                document.getElementById('start-export-btn').disabled = false;
+                this.isExporting = false;
+            }
+
+            cancelExport() {
+                this.isExporting = false;
+                this.pauseAllAudio();
+                this.closeExportModal();
+                this.showToast('Cancelled', 'Export process cancelled.');
+            }
+
+            async startExport() {
+                this.isExporting = true;
+                const btn = document.getElementById('start-export-btn');
+                btn.disabled = true;
+                document.getElementById('export-modal-buttons').style.display = 'none';
+                document.getElementById('export-progress-container').style.display = 'block';
+
+                const resVal = document.getElementById('export-res').value.split('x');
+                const exportWidth = parseInt(resVal[0]);
+                const exportHeight = parseInt(resVal[1]);
+                const exportFps = parseInt(document.getElementById('export-fps').value);
+                const exportMimeType = document.getElementById('export-format').value;
+
+                const mimeType = MediaRecorder.isTypeSupported(exportMimeType) ? exportMimeType : 'video/webm';
+                const fileExtension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+
+                const exportCanvas = document.createElement('canvas');
+                exportCanvas.width = exportWidth;
+                exportCanvas.height = exportHeight;
+                const exportCtx = exportCanvas.getContext('2d');
+
+                const maxTimelineDuration = this.clips.length > 0 ? Math.max(...this.clips.map(c => c.startTime + c.duration)) : 5;
+                const totalFrames = Math.ceil(maxTimelineDuration * exportFps);
+                let currentFrame = 0;
+
+                const stream = exportCanvas.captureStream(exportFps);
+                
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const dest = audioCtx.createMediaStreamDestination();
+
+                this.clips.forEach(clip => {
+                    if ((clip.type === 'audio' || clip.type === 'video') && this.mediaElementsRegistry[clip.assetId]) {
+                        const audEl = this.mediaElementsRegistry[clip.assetId];
+                        try {
+                            const sourceNode = audioCtx.createMediaElementSource(audEl);
+                            const gainNode = audioCtx.createGain();
+                            gainNode.gain.value = clip.volume !== undefined ? clip.volume : 1;
+                            sourceNode.connect(gainNode);
+                            gainNode.connect(dest);
+                        } catch(e) {}
+                    }
+                });
+
+                if (dest.stream.getAudioTracks().length > 0) {
+                    dest.stream.getAudioTracks().forEach(track => stream.addTrack(track));
+                }
+
+                let mediaRecorder;
+                try {
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
+                } catch(e) {
+                    mediaRecorder = new MediaRecorder(stream);
+                }
+
+                const chunks = [];
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data && e.data.size > 0) chunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    if (!this.isExporting) return;
+                    const blob = new Blob(chunks, { type: mimeType });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `webcut-export-${Date.now()}.${fileExtension}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    if (audioCtx.state !== 'closed') audioCtx.close();
+                    this.closeExportModal();
+                    this.showToast('Export Complete', 'Video exported and downloaded successfully.');
+                };
+
+                mediaRecorder.start();
+
+                this.clips.forEach(clip => {
+                    if ((clip.type === 'audio' || clip.type === 'video') && this.mediaElementsRegistry[clip.assetId]) {
+                        const audEl = this.mediaElementsRegistry[clip.assetId];
+                        audEl.currentTime = 0;
+                        audEl.volume = clip.volume !== undefined ? clip.volume : 1;
+                        audEl.play().catch(err => {});
+                    }
+                });
+
+                const bar = document.getElementById('export-progress-bar');
+                const percentageLabel = document.getElementById('export-percentage');
+                const statusText = document.getElementById('export-status-text');
+
+                const renderNextFrame = () => {
+                    if (!this.isExporting) {
+                        try { mediaRecorder.stop(); } catch(e){}
+                        if (audioCtx.state !== 'closed') audioCtx.close();
+                        return;
+                    }
+
+                    if (currentFrame <= totalFrames) {
+                        const renderTime = (currentFrame / exportFps);
+                        this.renderCanvas(exportCtx, exportCanvas, renderTime);
+
+                        const percent = Math.round((currentFrame / totalFrames) * 100);
+                        bar.style.width = percent + '%';
+                        percentageLabel.innerText = percent + '%';
+                        statusText.innerText = `Rendering frame ${currentFrame} / ${totalFrames}...`;
+
+                        currentFrame++;
+                        setTimeout(renderNextFrame, 10);
+                    } else {
+                        this.pauseAllAudio();
+                        mediaRecorder.stop();
+                    }
+                };
+
+                renderNextFrame();
+            }
+        }
+
+        const app = new WebCutEngine();
+    </script>
+</body>
+</html>
